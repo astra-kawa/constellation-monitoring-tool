@@ -1,0 +1,17 @@
+use chrono::{DateTime, Utc};
+
+struct EciState {
+    epoch: DateTime<Utc>,
+    pos_x: f64,
+    pos_y: f64,
+    pos_z: f64,
+    vel_x: f64,
+    vel_z: f64,
+}
+
+pub struct Satellite {
+    id: String,
+    initial_state: EciState,
+}
+
+pub struct Trajectory {}
