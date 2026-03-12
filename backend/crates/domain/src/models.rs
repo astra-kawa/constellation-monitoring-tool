@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 struct EciState {
     epoch: DateTime<Utc>,
     pos_x: f64,
@@ -11,7 +11,7 @@ struct EciState {
     vel_z: f64,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Satellite {
     id: String,
     initial_state: EciState,

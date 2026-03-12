@@ -1,6 +1,10 @@
 use crate::http::dto::{ErrorResponse, MessageResponse, PropagationRequest, PropagationResponse};
 use application::app::AppState;
-use axum::{Json, debug_handler, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{State, rejection::JsonRejection},
+    http::StatusCode,
+};
 
 pub async fn health() -> Json<MessageResponse> {
     Json(MessageResponse {
@@ -8,14 +12,20 @@ pub async fn health() -> Json<MessageResponse> {
     })
 }
 
-#[debug_handler]
 pub async fn propagate(
     State(state): State<AppState>,
-    payload: Option<Json<PropagationRequest>>,
+    payload: Result<Json<PropagationRequest>, JsonRejection>,
 ) -> Result<Json<PropagationResponse>, (StatusCode, Json<ErrorResponse>)> {
-    let payload_request = payload.map(|Json(inner)| inner).unwrap();
+    let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("invalid propagation request: {error}"),
+            }),
+        )
+    })?;
 
-    let response = state
+    let _response = state
         .client
         .post("test")
         .json(&payload_request)
