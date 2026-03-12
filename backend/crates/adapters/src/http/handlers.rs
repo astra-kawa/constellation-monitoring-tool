@@ -38,9 +38,9 @@ pub async fn propagate(
         .await
         .map_err(|error| {
             (
-                StatusCode::BAD_REQUEST,
+                StatusCode::from_u16(500).unwrap(),
                 Json(ErrorResponse {
-                    error: format!("invalid propagation request: {error}"),
+                    error: format!("Compute error: {error}"),
                 }),
             )
         })?;
