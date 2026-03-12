@@ -1,23 +1,6 @@
+use adapters::julia_services::orbit_propagator::JuliaOrbitPropagator;
 use application::app::AppState;
-use domain::{
-    errors::ComputeError,
-    models::{Ephemeris, Satellite},
-};
-use ports::outbound::OrbitPropagator;
-use std::{net::SocketAddr, sync::Arc, time::Duration};
-
-struct NoopOrbitPropagator;
-
-impl OrbitPropagator for NoopOrbitPropagator {
-    fn propagate(
-        &self,
-        _constellation: Vec<Satellite>,
-        _duration: Duration,
-        _step: Duration,
-    ) -> Result<Vec<Ephemeris>, ComputeError> {
-        Ok(Vec::<Ephemeris>::new())
-    }
-}
+use std::{net::SocketAddr, sync::Arc};
 
 #[tokio::main]
 async fn main() {
@@ -28,7 +11,9 @@ async fn main() {
         .await
         .expect("failed to bind backend listener");
 
-    let app = adapters::http::routes::build_router(AppState::new(Arc::new(NoopOrbitPropagator)));
+    let propagator = JuliaOrbitPropagator::new();
+
+    let app = adapters::http::routes::build_router(AppState::new(Arc::new(propagator)));
 
     axum::serve(listener, app)
         .await

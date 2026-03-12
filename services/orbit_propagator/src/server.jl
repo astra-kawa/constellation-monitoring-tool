@@ -13,25 +13,25 @@ function parse_float(value, name::AbstractString)
 end
 
 function parse_initial_states(payload::Dict{String,Any})
-    raw = payload["initial_states"]
-    raw isa AbstractVector || throw(ArgumentError("initial_states must be an array"))
-    !isempty(raw) || throw(ArgumentError("initial_states must not be empty"))
+    raw = payload["constellation"]
+    raw isa AbstractVector || throw(ArgumentError("constellation must be an array"))
+    !isempty(raw) || throw(ArgumentError("constellation must not be empty"))
 
     states = NTuple{6,Float64}[]
     ids = String[]
 
     for (index, sat) in pairs(raw)
-        sat isa AbstractDict || throw(ArgumentError("initial_states[$index] must be an object"))
+        sat isa AbstractDict || throw(ArgumentError("constellation[$index] must be an object"))
         push!(ids, String(get(sat, "id", "sat-$(index)")))
         push!(
             states,
             (
-                parse_float(get(sat, "pos_x", nothing), "initial_states[$index].pos_x"),
-                parse_float(get(sat, "pos_y", nothing), "initial_states[$index].pos_y"),
-                parse_float(get(sat, "pos_z", nothing), "initial_states[$index].pos_z"),
-                parse_float(get(sat, "vel_x", nothing), "initial_states[$index].vel_x"),
-                parse_float(get(sat, "vel_y", nothing), "initial_states[$index].vel_y"),
-                parse_float(get(sat, "vel_z", nothing), "initial_states[$index].vel_z"),
+                parse_float(get(sat, "pos_x", nothing), "constellation[$index].initial_state.pos_x"),
+                parse_float(get(sat, "pos_y", nothing), "constellation[$index].initial_state.pos_y"),
+                parse_float(get(sat, "pos_z", nothing), "constellation[$index].initial_state.pos_z"),
+                parse_float(get(sat, "vel_x", nothing), "constellation[$index].initial_state.vel_x"),
+                parse_float(get(sat, "vel_y", nothing), "constellation[$index].initial_state.vel_y"),
+                parse_float(get(sat, "vel_z", nothing), "constellation[$index].initial_state.vel_z"),
             )
         )
     end

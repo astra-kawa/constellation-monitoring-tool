@@ -7,9 +7,12 @@ name = "adapters"
 version = "0.1.0"
 dependencies = [
  "application",
+ "async-trait",
  "axum",
  "chrono",
  "domain",
+ "ports",
+ "reqwest",
  "serde",
  "tower-http",
 ]
@@ -35,6 +38,17 @@ version = "0.1.0"
 dependencies = [
  "ports",
  "reqwest",
+]
+
+[[package]]
+name = "async-trait"
+version = "0.1.89"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9035ad2d096bed7955a320ee7e2230574d28fd3c3a0f186cbea1ff3c7eed5dbb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -882,6 +896,7 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 name = "ports"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "domain",
 ]
 

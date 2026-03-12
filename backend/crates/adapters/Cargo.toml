@@ -6,8 +6,11 @@ edition = "2024"
 [dependencies]
 application = { path = "../application" }
 domain = { path = "../domain" }
+ports = { path = "../ports" }
 
 serde = { workspace = true }
 axum = { workspace = true }
 tower-http = { workspace = true }
 chrono = { workspace = true }
+reqwest = { workspace = true }
+async-trait = { workspace = true }

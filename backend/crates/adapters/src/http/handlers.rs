@@ -28,30 +28,24 @@ pub async fn propagate(
         )
     })?;
 
-    let propagate_result = state.propagator.propagate(
-        payload_request.constellation,
-        payload_request.duration,
-        payload_request.step,
-    );
-
-    // let _response = state
-    //     .client
-    //     .post("test")
-    //     .json(&payload_request)
-    //     .send()
-    //     .await
-    //     .map_err(|error| {
-    //         (
-    //             StatusCode::BAD_GATEWAY,
-    //             Json(ErrorResponse {
-    //                 error: format!("failed to reach orbit propagator: {error}"),
-    //             }),
-    //         )
-    //     })?;
-
-    // todo: if ComputeError, return relevant HTTP error
+    let propagate_result = state
+        .propagator
+        .propagate(
+            payload_request.constellation,
+            payload_request.duration,
+            payload_request.step,
+        )
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    error: format!("invalid propagation request: {error}"),
+                }),
+            )
+        })?;
 
     Ok(Json(PropagationResponse {
-        ephemerides: propagate_result.unwrap(),
+        ephemerides: propagate_result,
     }))
 }
