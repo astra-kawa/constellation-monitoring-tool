@@ -7,7 +7,7 @@ use std::time::Duration;
 pub trait OrbitPropagator: Send + Sync {
     fn propagate(
         &self,
-        constellation: [&Satellite],
+        constellation: Vec<Satellite>,
         duration: Duration,
     ) -> Result<Trajectory, ComputeError>;
 }
