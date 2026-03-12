@@ -1,7 +1,7 @@
 use application::app::AppState;
 use domain::{
     errors::ComputeError,
-    models::{Satellite, Trajectory},
+    models::{Ephemeris, Satellite},
 };
 use ports::outbound::OrbitPropagator;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
@@ -13,8 +13,9 @@ impl OrbitPropagator for NoopOrbitPropagator {
         &self,
         _constellation: Vec<Satellite>,
         _duration: Duration,
-    ) -> Result<Trajectory, ComputeError> {
-        Ok(Trajectory {})
+        _step: Duration,
+    ) -> Result<Vec<Ephemeris>, ComputeError> {
+        Ok(Vec::<Ephemeris>::new())
     }
 }
 

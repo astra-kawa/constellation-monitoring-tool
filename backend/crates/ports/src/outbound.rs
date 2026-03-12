@@ -1,6 +1,6 @@
 use domain::{
     errors::ComputeError,
-    models::{Satellite, Trajectory},
+    models::{Ephemeris, Satellite},
 };
 use std::time::Duration;
 
@@ -9,5 +9,6 @@ pub trait OrbitPropagator: Send + Sync {
         &self,
         constellation: Vec<Satellite>,
         duration: Duration,
-    ) -> Result<Trajectory, ComputeError>;
+        step: Duration,
+    ) -> Result<Vec<Ephemeris>, ComputeError>;
 }

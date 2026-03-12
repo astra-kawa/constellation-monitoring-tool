@@ -5,8 +5,11 @@ use axum::{
     extract::{State, rejection::JsonRejection},
     http::StatusCode,
 };
+use chrono::Utc;
 
 pub async fn health() -> Json<MessageResponse> {
+    println!("{} | GET /health", Utc::now());
+
     Json(MessageResponse {
         message: "ok".to_owned(),
     })
@@ -25,20 +28,30 @@ pub async fn propagate(
         )
     })?;
 
-    let _response = state
-        .client
-        .post("test")
-        .json(&payload_request)
-        .send()
-        .await
-        .map_err(|error| {
-            (
-                StatusCode::BAD_GATEWAY,
-                Json(ErrorResponse {
-                    error: format!("failed to reach orbit engine: {error}"),
-                }),
-            )
-        })?;
+    let propagate_result = state.propagator.propagate(
+        payload_request.constellation,
+        payload_request.duration,
+        payload_request.step,
+    );
 
-    Ok(Json(PropagationResponse {}))
+    // let _response = state
+    //     .client
+    //     .post("test")
+    //     .json(&payload_request)
+    //     .send()
+    //     .await
+    //     .map_err(|error| {
+    //         (
+    //             StatusCode::BAD_GATEWAY,
+    //             Json(ErrorResponse {
+    //                 error: format!("failed to reach orbit propagator: {error}"),
+    //             }),
+    //         )
+    //     })?;
+
+    // todo: if ComputeError, return relevant HTTP error
+
+    Ok(Json(PropagationResponse {
+        ephemerides: propagate_result.unwrap(),
+    }))
 }

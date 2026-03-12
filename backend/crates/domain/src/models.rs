@@ -17,4 +17,5 @@ pub struct Satellite {
     initial_state: EciState,
 }
 
-pub struct Trajectory {}
+#[derive(Deserialize, Serialize)]
+pub struct Ephemeris {}
