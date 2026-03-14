@@ -1,5 +1,6 @@
+use adapters::julia_services::orbit_propagator::JuliaOrbitPropagator;
 use application::app::AppState;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 #[tokio::main]
 async fn main() {
@@ -10,7 +11,9 @@ async fn main() {
         .await
         .expect("failed to bind backend listener");
 
-    let app = adapters::http::routes::build_router(AppState {});
+    let propagator = JuliaOrbitPropagator::new();
+
+    let app = adapters::http::routes::build_router(AppState::new(Arc::new(propagator)));
 
     axum::serve(listener, app)
         .await

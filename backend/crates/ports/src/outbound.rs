@@ -1,13 +1,16 @@
+use async_trait::async_trait;
 use domain::{
     errors::ComputeError,
-    models::{Satellite, Trajectory},
+    models::{Ephemeris, Satellite},
 };
 use std::time::Duration;
 
+#[async_trait]
 pub trait OrbitPropagator: Send + Sync {
-    fn propagate(
+    async fn propagate(
         &self,
-        constellation: [&Satellite],
+        constellation: Vec<Satellite>,
         duration: Duration,
-    ) -> Result<Trajectory, ComputeError>;
+        step: Duration,
+    ) -> Result<Vec<Ephemeris>, ComputeError>;
 }
