@@ -1,4 +1,4 @@
-use domain::models::{Ephemeris, Satellite};
+use domain::models::Ephemeris;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -14,13 +14,11 @@ pub struct MessageResponse {
 
 #[derive(Deserialize, Serialize)]
 pub struct PropagationRequest {
-    pub constellation: Vec<Satellite>,
     pub duration: Duration,
     pub step: Duration,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct PropagationResponse {
-    //pub constellation: Vec<Satellite>,
     pub ephemerides: Vec<Ephemeris>,
 }

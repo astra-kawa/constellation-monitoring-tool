@@ -18,4 +18,9 @@ pub struct Satellite {
 }
 
 #[derive(Deserialize, Serialize)]
+pub struct Constellation {
+    pub satellites: Vec<Satellite>,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct Ephemeris {}

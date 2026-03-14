@@ -28,10 +28,23 @@ pub async fn propagate(
         )
     })?;
 
+    let constellation = state
+        .constellation_repository
+        .get_constellation()
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::from_u16(500).unwrap(),
+                Json(ErrorResponse {
+                    error: format!("Constellation repository error: {error}"),
+                }),
+            )
+        })?;
+
     let propagate_result = state
         .propagator
         .propagate(
-            payload_request.constellation,
+            constellation,
             payload_request.duration,
             payload_request.step,
         )
