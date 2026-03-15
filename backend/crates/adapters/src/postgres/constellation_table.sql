@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS constellation (
-    id TEXT PRIMARY KEY,
+    name TEXT PRIMARY KEY,
     initial TIMESTAMP,
     pos_x REAL,
     pos_y REAL,
