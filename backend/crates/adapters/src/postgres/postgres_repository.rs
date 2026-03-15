@@ -8,7 +8,7 @@ pub struct PostgresRepository {
 }
 
 impl PostgresRepository {
-    async fn new(url: &str) -> Self {
+    pub async fn new(url: &str) -> Self {
         let pool: Pool<Postgres> = PgPoolOptions::new()
             .max_connections(1)
             .connect(url)
@@ -24,9 +24,11 @@ impl PostgresRepository {
 
 impl ConstellationRepository for PostgresRepository {
     async fn set_constellation(&self, constellation: Constellation) -> Result<(), RepositoryError> {
-        for satellite in constellation.satellites {
-            sqlx::query!("INSERT INTO constellation VALUES (), ()")
-        }
+        // for satellite in constellation.satellites {
+        //     sqlx::query!(
+        //         "INSERT INTO constellation VALUES (id, initial, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z), ($1, $2, $3, $4, $5, $6, $7, $8)"
+        //     );
+        // }
 
         Ok(())
     }

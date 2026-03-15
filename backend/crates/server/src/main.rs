@@ -1,4 +1,7 @@
-use adapters::julia_services::orbit_propagator::JuliaOrbitPropagator;
+use adapters::{
+    julia_services::orbit_propagator::JuliaOrbitPropagator,
+    postgres::postgres_repository::PostgresRepository,
+};
 use application::app::AppState;
 use std::{net::SocketAddr, sync::Arc};
 
@@ -11,9 +14,11 @@ async fn main() {
         .await
         .expect("failed to bind backend listener");
 
+    let repo = PostgresRepository::new("postgresql://michal@localhost/constellation_monitor").await;
     let propagator = JuliaOrbitPropagator::new();
 
-    let app = adapters::http::routes::build_router(AppState::new(Arc::new(propagator)));
+    let app =
+        adapters::http::routes::build_router(AppState::new(Arc::new(repo), Arc::new(propagator)));
 
     axum::serve(listener, app)
         .await
