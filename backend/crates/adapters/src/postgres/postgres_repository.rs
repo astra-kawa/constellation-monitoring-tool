@@ -1,11 +1,11 @@
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use domain::models::{Constellation, EciState, Satellite};
 use ports::{errors::RepositoryError, outbound::ConstellationRepository};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
 pub struct PostgresRepository {
     pool: Pool<Postgres>,
-    url: String,
 }
 
 impl PostgresRepository {
@@ -16,10 +16,7 @@ impl PostgresRepository {
             .await
             .expect("Bruh");
 
-        Self {
-            pool,
-            url: url.to_owned(),
-        }
+        Self { pool }
     }
 }
 
@@ -49,7 +46,11 @@ impl ConstellationRepository for PostgresRepository {
             satellites.push(Satellite {
                 id: record.name,
                 initial_state: EciState {
-                    epoch: record.initial.unwrap(),
+                    epoch: {
+                        let epoch = record.initial.unwrap().assume_utc();
+                        DateTime::<Utc>::from_timestamp(epoch.unix_timestamp(), epoch.nanosecond())
+                            .expect("database timestamp should be valid")
+                    },
                     pos_x: record.pos_x.unwrap(),
                     pos_y: record.pos_y.unwrap(),
                     pos_z: record.pos_z.unwrap(),
@@ -60,8 +61,6 @@ impl ConstellationRepository for PostgresRepository {
             });
         }
 
-        Ok(Constellation {
-            satellites: Vec::<Satellite>::new(),
-        })
+        Ok(Constellation { satellites })
     }
 }
