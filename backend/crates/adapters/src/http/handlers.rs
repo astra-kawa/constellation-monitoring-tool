@@ -1,4 +1,6 @@
-use crate::http::dto::{ErrorResponse, MessageResponse, PropagationRequest, PropagationResponse};
+use crate::http::dto::{
+    ConstellationResponse, ErrorResponse, MessageResponse, PropagationRequest, PropagationResponse,
+};
 use application::app::AppState;
 use axum::{
     Json,
@@ -13,6 +15,25 @@ pub async fn health() -> Json<MessageResponse> {
     Json(MessageResponse {
         message: "ok".to_owned(),
     })
+}
+
+pub async fn get_constellation(
+    State(state): State<AppState>,
+) -> Result<Json<ConstellationResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let constellation = state
+        .constellation_repository
+        .get_constellation()
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::from_u16(500).unwrap(),
+                Json(ErrorResponse {
+                    error: format!("Constellation repository error: {error}"),
+                }),
+            )
+        })?;
+
+    Ok(Json(ConstellationResponse { constellation }))
 }
 
 pub async fn propagate(

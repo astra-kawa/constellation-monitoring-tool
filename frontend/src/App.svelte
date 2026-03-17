@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  let message = "Loading backend status...";
+  let healthMessage = "Loading backend status...";
+  let constellationMessage = "Loading constellation data..."
+  let constellationData;
 
   onMount(async () => {
     try {
@@ -11,16 +13,32 @@
       }
 
       const health = await healthResponse.json();
-      message = health.message;
+      healthMessage = health.message;
     } catch (error) {
-      message = "Backend unavailable";
+      healthMessage = "Backend unavailable";
+    }
+
+    try {
+      const constellationResponse = await fetch("http://127.0.0.1:3000/api/constellation");
+      if (!constellationResponse.ok) {
+        throw new Error("backend unavailable");
+      }
+
+      const constellation = await constellationResponse.json();
+      constellationData = constellation.constellation;
+
+      console.log(constellationData);
+      constellationMessage = "Retrieved constellation data:";
+    } catch (error) {
+      constellationMessage = "Backend unavailable";
     }
   });
 </script>
 
 <main>
   <p>Fleet Monitoring Tool</p>
-  <p>Backend health: {message}</p>
+  <p>Backend health: {healthMessage}</p>
+  <p>Constellation data: {constellationMessage}</p>
 </main>
 
 <style>
