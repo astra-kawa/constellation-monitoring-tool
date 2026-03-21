@@ -62,7 +62,7 @@ impl ConstellationRepository for PostgresRepository {
     }
 
     async fn get_constellation(&self) -> Result<Constellation, RepositoryError> {
-        let satellite_records = sqlx::query!("SELECT * FROM constellation")
+        let satellite_records = sqlx::query!("SELECT * FROM constellation ORDER BY name ASC")
             .fetch_all(&self.pool)
             .await
             .map_err(|_| RepositoryError::Other)?;
