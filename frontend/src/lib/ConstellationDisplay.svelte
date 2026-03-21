@@ -39,7 +39,7 @@
 <div class="constellation-display">
   <div class="satellite-data">
     {#each constellationData as satellite: Satellite}
-      <SatelliteCard satelliteProp={satellite} />
+      <SatelliteCard {satellite} />
     {/each}
   </div>
 </div>

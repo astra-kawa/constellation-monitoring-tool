@@ -14,8 +14,7 @@
     initial_state: EciState;
   }
 
-  let { satelliteProp } = $props();
-  let satellite: Satellite = satelliteProp;
+  let { satellite }: { satellite: Satellite } = $props();
 </script>
 
 <div class="satellite-card">
