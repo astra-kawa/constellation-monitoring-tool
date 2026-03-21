@@ -7,7 +7,7 @@
 
   --idle-colour: #78716c;
   --healthy-colour: #10b981;
-  --unhealthy_colour: #dc2626;
+  --unhealthy_colour: #ef4444;
 
   font-family: var(--main-font-family);
 
