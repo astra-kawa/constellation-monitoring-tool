@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import SatelliteCard from "./SatelliteCard.svelte";
 
   interface EciState {
     epoch: Date;
@@ -12,11 +13,10 @@
   }
 
   interface Satellite {
-    name: string;
+    id: string;
     initial_state: EciState;
   }
 
-  let constellationMessage = "Loading constellation data...";
   let constellationData: Satellite[];
 
   onMount(async () => {
@@ -30,14 +30,30 @@
 
       const response = await constellationResponse.json();
       constellationData = response.satellites;
-
-      constellationMessage = `Retrieved constellation data: ${constellationData.length}`;
     } catch (error) {
-      constellationMessage = "Backend unavailable";
+      console.log(`Error: ${error}`);
     }
   });
 </script>
 
-<div>
-  <p>{constellationMessage}</p>
+<div class="constellation-display">
+  <div>Constellation</div>
+
+  <div class="satellite-data">
+    {#each constellationData as satellite: Satellite}
+      <SatelliteCard satelliteProp={satellite} />
+    {/each}
+  </div>
 </div>
+
+<style>
+  .constellation-display {
+    margin-top: 2rem;
+  }
+
+  .satellite-data {
+    display: grid;
+    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+</style>

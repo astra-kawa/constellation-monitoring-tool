@@ -4,6 +4,7 @@
 
 <div class="titlebar">
   <span>Fleet Monitor</span>
+  <span>2026-001 12:00:00</span>
   <BackendStatusIndicator />
 </div>
 
