@@ -22,15 +22,22 @@ impl PostgresRepository {
 
 #[async_trait]
 impl ConstellationRepository for PostgresRepository {
-    async fn set_constellation(
-        &self,
-        _constellation: Constellation,
-    ) -> Result<(), RepositoryError> {
-        // for satellite in constellation.satellites {
-        //     sqlx::query!(
-        //         "INSERT INTO constellation VALUES (id, initial, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z), ($1, $2, $3, $4, $5, $6, $7, $8)"
-        //     );
-        // }
+    async fn set_constellation(&self, constellation: Constellation) -> Result<(), RepositoryError> {
+        for satellite in constellation.satellites {
+            let query = "INSERT INTO constellation (name, initial, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z) VALUES ($1, $2::timestamp, $3, $4, $5, $6, $7, $8)";
+            sqlx::query(query)
+                .bind(satellite.id)
+                .bind(satellite.initial_state.epoch.naive_utc().to_string())
+                .bind(satellite.initial_state.pos_x)
+                .bind(satellite.initial_state.pos_y)
+                .bind(satellite.initial_state.pos_z)
+                .bind(satellite.initial_state.vel_x)
+                .bind(satellite.initial_state.vel_y)
+                .bind(satellite.initial_state.vel_z)
+                .execute(&self.pool)
+                .await
+                .map_err(|_| RepositoryError::Other)?;
+        }
 
         Ok(())
     }
