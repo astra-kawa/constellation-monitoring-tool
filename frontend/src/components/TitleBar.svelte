@@ -1,10 +1,11 @@
 <script>
   import BackendStatusIndicator from "./BackendStatusIndicator.svelte";
+  import DoyTimeDisplay from "./DoyTimeDisplay.svelte";
 </script>
 
 <div class="titlebar">
-  <span>Fleet Monitor</span>
-  <span>2026-001 12:00:00</span>
+  <span>Fleet Monitoring Tool</span>
+  <DoyTimeDisplay />
   <BackendStatusIndicator />
 </div>
 
