@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
 
   let healthMessage = "Loading backend status...";
-  let constellationMessage = "Loading constellation data..."
+  let constellationMessage = "Loading constellation data...";
   let constellationData;
 
   onMount(async () => {
@@ -19,13 +19,14 @@
     }
 
     try {
-      const constellationResponse = await fetch("http://127.0.0.1:3000/api/constellation");
+      const constellationResponse = await fetch(
+        "http://127.0.0.1:3000/api/constellation",
+      );
       if (!constellationResponse.ok) {
         throw new Error("backend unavailable");
       }
 
-      const constellation = await constellationResponse.json();
-      constellationData = constellation.constellation;
+      constellationData = await constellationResponse.json();
 
       console.log(constellationData);
       constellationMessage = "Retrieved constellation data:";
@@ -42,5 +43,4 @@
 </main>
 
 <style>
-
 </style>

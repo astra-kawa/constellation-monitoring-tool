@@ -1,6 +1,4 @@
-use crate::http::dto::{
-    ConstellationResponse, ErrorResponse, MessageResponse, PropagationRequest, PropagationResponse,
-};
+use crate::http::dto::{ErrorResponse, MessageResponse, PropagationRequest, PropagationResponse};
 use application::app::AppState;
 use axum::{
     Json,
@@ -8,6 +6,7 @@ use axum::{
     http::StatusCode,
 };
 use chrono::Utc;
+use domain::models::Constellation;
 
 pub async fn health() -> Json<MessageResponse> {
     println!("{} | GET /health", Utc::now());
@@ -19,7 +18,7 @@ pub async fn health() -> Json<MessageResponse> {
 
 pub async fn get_constellation(
     State(state): State<AppState>,
-) -> Result<Json<ConstellationResponse>, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<Json<Constellation>, (StatusCode, Json<ErrorResponse>)> {
     let constellation = state
         .constellation_repository
         .get_constellation()
@@ -33,7 +32,7 @@ pub async fn get_constellation(
             )
         })?;
 
-    Ok(Json(ConstellationResponse { constellation }))
+    Ok(Json(constellation))
 }
 
 pub async fn propagate(
