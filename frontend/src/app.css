@@ -11,6 +11,9 @@
   --healthy-colour: light-dark(#10b981, #34d399);
   --unhealthy_colour: #ef4444;
 
+  --interactive-colour1: #047857;
+  --interactive-colour2: #b91c1c;
+
   /*--input-background-colour: light-dark(#e5e7eb, #d1d5db);*/
 
   font-family: var(--main-font-family);

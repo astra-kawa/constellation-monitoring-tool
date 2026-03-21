@@ -1,11 +1,16 @@
 <script lang="ts">
   import type { Satellite } from "../lib/types";
 
-  let { satellite }: { satellite: Satellite } = $props();
+  let {
+    satellite,
+    refreshConstellationData,
+  }: { satellite: Satellite; refreshConstellationData: Function } = $props();
 
   let isSaving = $state(false);
   let saveMessage = $state("");
   let saveError = $state("");
+
+  let isDeleting = $state(false);
 
   function clearFeedback() {
     saveMessage = "";
@@ -64,8 +69,6 @@
       },
     };
 
-    console.log(payload);
-
     isSaving = true;
 
     try {
@@ -81,11 +84,9 @@
       );
 
       if (!response.ok) {
-        const errorResponse = await response
-          .json()
-          .catch(() => ({
-            error: `Failed to update satellite ${satellite.id}`,
-          }));
+        const errorResponse = await response.json().catch(() => ({
+          error: `Failed to update satellite ${satellite.id}`,
+        }));
 
         throw new Error(
           typeof errorResponse?.error === "string"
@@ -227,8 +228,25 @@
     </table>
   </div>
   <div class="satellite-actions">
-    <button type="submit" disabled={isSaving}>
-      {isSaving ? "Saving..." : "Save"}
+    <button class="save-button" type="submit" disabled={isSaving}>
+      SAVE
+    </button>
+    <button
+      class="delete-button"
+      type="button"
+      disabled={isDeleting}
+      onclick={async () => {
+        const constellationResponse = await fetch(
+          `http://127.0.0.1:3000/api/constellation/${encodeURIComponent(satellite.id)}`,
+          {
+            method: "DELETE",
+          },
+        );
+
+        refreshConstellationData();
+      }}
+    >
+      DELETE
     </button>
     <span class="satellite-status" aria-live="polite">
       {#if saveError}
@@ -263,10 +281,11 @@
 
   .satellite-actions {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
-    padding: 0.75rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
     border-top: 1px solid var(--main-font-colour);
   }
 
@@ -291,14 +310,20 @@
   }
 
   button {
-    border: 1px solid var(--main-font-colour);
     cursor: pointer;
-    padding: 0.25rem 0.75rem;
   }
 
   button:disabled {
     cursor: wait;
     opacity: 0.7;
+  }
+
+  .save-button {
+    background-color: var(--interactive-colour1);
+  }
+
+  .delete-button {
+    background-color: var(--interactive-colour2);
   }
 
   .satellite-status {
