@@ -2,11 +2,11 @@ use crate::http::dto::{ErrorResponse, MessageResponse, PropagationRequest, Propa
 use application::app::AppState;
 use axum::{
     Json,
-    extract::{State, rejection::JsonRejection},
+    extract::{Path, State, rejection::JsonRejection},
     http::StatusCode,
 };
 use chrono::Utc;
-use domain::models::Constellation;
+use domain::models::{Constellation, Satellite};
 
 pub async fn health() -> Json<MessageResponse> {
     println!("{} | GET /health", Utc::now());
@@ -63,6 +63,79 @@ pub async fn set_constellation(
 
     Ok(Json(MessageResponse {
         message: "Ok".to_string(),
+    }))
+}
+
+pub async fn set_satellite(
+    State(state): State<AppState>,
+    payload: Result<Json<Satellite>, JsonRejection>,
+) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("invalid satellite request: {error}"),
+            }),
+        )
+    })?;
+
+    state
+        .constellation_repository
+        .set_satellite(payload_request)
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::from_u16(500).unwrap(),
+                Json(ErrorResponse {
+                    error: format!("Constellation repository error: {error}"),
+                }),
+            )
+        })?;
+
+    Ok(Json(MessageResponse {
+        message: "Ok".to_string(),
+    }))
+}
+
+pub async fn get_satellite(
+    State(state): State<AppState>,
+    Path(satellite_id): Path<String>,
+) -> Result<Json<Satellite>, (StatusCode, Json<ErrorResponse>)> {
+    let satellite = state
+        .constellation_repository
+        .get_satellite(&satellite_id)
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::from_u16(500).unwrap(),
+                Json(ErrorResponse {
+                    error: format!("Constellation repository error: {error}"),
+                }),
+            )
+        })?;
+
+    Ok(Json(satellite))
+}
+
+pub async fn delete_satellite(
+    State(state): State<AppState>,
+    Path(satellite_id): Path<String>,
+) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
+    state
+        .constellation_repository
+        .delete_satellite(&satellite_id)
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::from_u16(500).unwrap(),
+                Json(ErrorResponse {
+                    error: format!("Constellation repository error: {error}"),
+                }),
+            )
+        })?;
+
+    Ok(Json(MessageResponse {
+        message: format!("Deleted satellite: {}", &satellite_id).to_string(),
     }))
 }
 
