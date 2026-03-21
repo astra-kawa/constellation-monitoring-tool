@@ -1,6 +1,6 @@
 <script lang="ts">
-  import ConstellationDisplay from "./lib/ConstellationDisplay.svelte";
-  import TitleBar from "./lib/TitleBar.svelte";
+  import ConstellationDisplay from "./components/ConstellationDisplay.svelte";
+  import TitleBar from "./components/TitleBar.svelte";
 </script>
 
 <main>

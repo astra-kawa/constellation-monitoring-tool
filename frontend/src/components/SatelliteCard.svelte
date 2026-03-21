@@ -18,7 +18,7 @@
           <td>Initial State</td>
           <td></td>
           <td>
-            <select name="state-types" id="state-types">
+            <select name="state-types" id="state-{satellite.id}">
               <option value="eci">Earth-Centered Inertial</option>
               <option value="kepler">Keplerian Orbital Elements</option>
             </select>
@@ -27,37 +27,79 @@
         <tr>
           <td>Epoch</td>
           <td>UTC</td>
-          <td><input type="text" value={satellite.initial_state.epoch} /></td>
+          <td
+            ><input
+              type="text"
+              id="epoch-{satellite.id}"
+              value={satellite.initial_state.epoch}
+            /></td
+          >
         </tr>
         <tr>
           <td>Position</td>
           <td>X</td>
-          <td><input type="number" value={satellite.initial_state.pos_x} /></td>
+          <td
+            ><input
+              type="number"
+              id="pos_x-{satellite.id}"
+              value={satellite.initial_state.pos_x}
+            /></td
+          >
         </tr>
         <tr>
           <td>[km]</td>
           <td>Y</td>
-          <td><input type="number" value={satellite.initial_state.pos_y} /></td>
+          <td
+            ><input
+              type="number"
+              id="pos_y-{satellite.id}"
+              value={satellite.initial_state.pos_y}
+            /></td
+          >
         </tr>
         <tr>
           <td></td>
           <td>Y</td>
-          <td><input type="number" value={satellite.initial_state.pos_z} /></td>
+          <td
+            ><input
+              type="number"
+              id="pos_z-{satellite.id}"
+              value={satellite.initial_state.pos_z}
+            /></td
+          >
         </tr>
         <tr>
           <td>Velocity</td>
           <td>X</td>
-          <td><input type="number" value={satellite.initial_state.vel_x} /></td>
+          <td
+            ><input
+              type="number"
+              id="vel_x-{satellite.id}"
+              value={satellite.initial_state.vel_x}
+            /></td
+          >
         </tr>
         <tr>
           <td>[km/s]</td>
           <td>Y</td>
-          <td><input type="number" value={satellite.initial_state.vel_y} /></td>
+          <td
+            ><input
+              type="number"
+              id="vel_y-{satellite.id}"
+              value={satellite.initial_state.vel_y}
+            /></td
+          >
         </tr>
         <tr>
           <td></td>
           <td>Y</td>
-          <td><input type="number" value={satellite.initial_state.vel_z} /></td>
+          <td
+            ><input
+              type="number"
+              id="vel_z-{satellite.id}"
+              value={satellite.initial_state.vel_z}
+            /></td
+          >
         </tr>
       </tbody>
     </table>

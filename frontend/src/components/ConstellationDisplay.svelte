@@ -38,6 +38,6 @@
   .satellite-data {
     display: grid;
     gap: 15px;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(325px, 1fr));
   }
 </style>
