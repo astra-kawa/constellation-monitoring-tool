@@ -1,5 +1,5 @@
 export interface EciState {
-  epoch: Date;
+  epoch: string;
   pos_x: number;
   pos_y: number;
   pos_z: number;
