@@ -1,5 +1,7 @@
 :root {
   --main-font-family: "TX-02";
+  --main-font-size: 12pt;
+  --secondary-font-size: 9pt;
 
   color-scheme: light dark;
   --background-colour: light-dark(white, black);
@@ -10,6 +12,7 @@
   --unhealthy_colour: #ef4444;
 
   font-family: var(--main-font-family);
+  font-size: var(--main-font-size);
 
   background-color: var(--background-colour);
   color: var(--main-font-colour);

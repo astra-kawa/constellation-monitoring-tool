@@ -21,69 +21,67 @@
 <div class="satellite-card">
   <div class="satellite-title">{satellite.id}</div>
   <div class="satellite-details">
-    <div class="satellite-card-fields">
-      <div class="card-field">
-        <div>Initial State</div>
-      </div>
-      <div class="card-field">
-        <div>Epoch</div>
-      </div>
-      <div class="card-field">
-        <div>Position</div>
-        <div>X</div>
-      </div>
-      <div class="card-field">
-        <div></div>
-        <div>Y</div>
-      </div>
-      <div class="card-field">
-        <div></div>
-        <div>Z</div>
-      </div>
-      <div class="card-field">
-        <div>Velocity</div>
-        <div>X</div>
-      </div>
-      <div class="card-field">
-        <div></div>
-        <div>Y</div>
-      </div>
-      <div class="card-field">
-        <div></div>
-        <div>Z</div>
-      </div>
-    </div>
-    <div class="satellite-card-values">
-      <div class="card-value"><span>CartesianECI</span></div>
-      <div class="card-value">
-        <span>{satellite.initial_state.epoch}</span>
-      </div>
-      <div class="card-value">
-        <span>{satellite.initial_state.pos_x}</span>
-      </div>
-      <div class="card-value">
-        <span>{satellite.initial_state.pos_y}</span>
-      </div>
-      <div class="card-value">
-        <span>{satellite.initial_state.pos_z}</span>
-      </div>
-      <div class="card-value">
-        <span>{satellite.initial_state.vel_x}</span>
-      </div>
-      <div class="card-value">
-        <span>{satellite.initial_state.vel_y}</span>
-      </div>
-      <div class="card-value">
-        <span>{satellite.initial_state.vel_z}</span>
-      </div>
-    </div>
+    <table>
+      <tbody>
+        <tr>
+          <td>Status</td>
+          <td></td>
+          <td>NOMINAL</td>
+        </tr>
+        <tr>
+          <td>Initial State</td>
+          <td></td>
+          <td>
+            <select name="state-types" id="state-types">
+              <option value="eci">Earth-Centered Inertial</option>
+              <option value="kepler">Keplerian Orbital Elements</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Epoch</td>
+          <td>UTC</td>
+          <td>{satellite.initial_state.epoch}</td>
+        </tr>
+        <tr>
+          <td>Position</td>
+          <td>X</td>
+          <td>{satellite.initial_state.pos_x}</td>
+        </tr>
+        <tr>
+          <td>[km]</td>
+          <td>Y</td>
+          <td>{satellite.initial_state.pos_y}</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>Y</td>
+          <td>{satellite.initial_state.pos_z}</td>
+        </tr>
+        <tr>
+          <td>Velocity</td>
+          <td>X</td>
+          <td>{satellite.initial_state.vel_x}</td>
+        </tr>
+        <tr>
+          <td>[km/s]</td>
+          <td>Y</td>
+          <td>{satellite.initial_state.vel_y}</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>Y</td>
+          <td>{satellite.initial_state.vel_z}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
 <style>
   .satellite-card {
     border: 1px solid var(--main-font-colour);
-    max-width: 400px;
+    font-size: var(--secondary-font-size);
   }
 
   .satellite-title {
@@ -96,11 +94,18 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    gap: 5px;
   }
 
-  .card-field {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+  table th:nth-child(3),
+  table td:nth-child(3) {
+    text-align: right;
+  }
+
+  select {
+    border: none;
+
+    font-family: var(--main-font-family);
+    font-size: var(--secondary-font-size);
   }
 </style>
