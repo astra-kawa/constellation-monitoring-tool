@@ -1,21 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import SatelliteCard from "./SatelliteCard.svelte";
-
-  interface EciState {
-    epoch: Date;
-    pos_x: number;
-    pos_y: number;
-    pos_z: number;
-    vel_x: number;
-    vel_y: number;
-    vel_z: number;
-  }
-
-  interface Satellite {
-    id: string;
-    initial_state: EciState;
-  }
+  import type { Satellite } from "../lib/types";
 
   let constellationData: Satellite[];
 
