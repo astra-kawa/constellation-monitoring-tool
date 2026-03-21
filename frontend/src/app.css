@@ -8,7 +8,7 @@
   --main-font-colour: light-dark(black, white);
 
   --idle-colour: #78716c;
-  --healthy-colour: #10b981;
+  --healthy-colour: light-dark(#10b981, #34d399);
   --unhealthy_colour: #ef4444;
 
   /*--input-background-colour: light-dark(#e5e7eb, #d1d5db);*/

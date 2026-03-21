@@ -14,10 +14,10 @@
 
       const health = await healthResponse.json();
       //healthMessage = health.message;
-      healthMessage = "BACKEND HEALTHY";
+      healthMessage = "BACKEND CONNECTED";
       messageClass = "backend-healthy";
     } catch (error) {
-      healthMessage = "BACKEND UNAVAILABLE";
+      healthMessage = "BACKEND DISCONNECTED";
       messageClass = "backend-unhealthy";
     }
   });
