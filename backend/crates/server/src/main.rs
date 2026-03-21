@@ -3,10 +3,14 @@ use adapters::{
     postgres::postgres_repository::PostgresRepository,
 };
 use application::app::AppState;
+use dotenv::dotenv;
+use std::env;
 use std::{net::SocketAddr, sync::Arc};
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("Backend running on http://{addr}");
 
@@ -14,7 +18,7 @@ async fn main() {
         .await
         .expect("failed to bind backend listener");
 
-    let repo = PostgresRepository::new("postgresql://michal@localhost/constellation_monitor").await;
+    let repo = PostgresRepository::new(&env::var("PG_DB").unwrap()).await;
     let propagator = JuliaOrbitPropagator::new();
 
     let app =
