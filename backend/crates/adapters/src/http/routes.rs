@@ -1,8 +1,8 @@
-use crate::http::handlers::{get_constellation, health, propagate};
+use crate::http::handlers::{get_constellation, health, propagate, set_constellation};
 use application::app::AppState;
 use axum::{
     Router,
-    routing::{get, post},
+    routing::{get, post, put},
 };
 use tower_http::cors::{Any, CorsLayer};
 
@@ -15,6 +15,7 @@ pub fn build_router(app_state: AppState) -> Router {
     Router::new()
         .route("/api/health", get(health))
         .route("/api/constellation", get(get_constellation))
+        .route("/api/constellation", put(set_constellation))
         .route("/api/propagate", post(propagate))
         .with_state(app_state)
         .layer(cors)

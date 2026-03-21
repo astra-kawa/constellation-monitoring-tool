@@ -35,6 +35,37 @@ pub async fn get_constellation(
     Ok(Json(constellation))
 }
 
+pub async fn set_constellation(
+    State(state): State<AppState>,
+    payload: Result<Json<Constellation>, JsonRejection>,
+) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("invalid constellation request: {error}"),
+            }),
+        )
+    })?;
+
+    state
+        .constellation_repository
+        .set_constellation(payload_request)
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::from_u16(500).unwrap(),
+                Json(ErrorResponse {
+                    error: format!("Constellation repository error: {error}"),
+                }),
+            )
+        })?;
+
+    Ok(Json(MessageResponse {
+        message: "Ok".to_string(),
+    }))
+}
+
 pub async fn propagate(
     State(state): State<AppState>,
     payload: Result<Json<PropagationRequest>, JsonRejection>,
