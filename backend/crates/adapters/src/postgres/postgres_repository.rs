@@ -119,7 +119,7 @@ impl ConstellationRepository for PostgresRepository {
 
     async fn delete_satellite(&self, satellite_id: &str) -> Result<(), RepositoryError> {
         sqlx::query!("DELETE FROM constellation WHERE name = $1", satellite_id)
-            .fetch_one(&self.pool)
+            .execute(&self.pool)
             .await
             .map_err(|_| RepositoryError::Other)?;
 
