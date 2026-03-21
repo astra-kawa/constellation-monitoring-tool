@@ -68,6 +68,7 @@ pub async fn set_constellation(
 
 pub async fn set_satellite(
     State(state): State<AppState>,
+    Path(satellite_id): Path<String>,
     payload: Result<Json<Satellite>, JsonRejection>,
 ) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
@@ -78,6 +79,18 @@ pub async fn set_satellite(
             }),
         )
     })?;
+
+    if satellite_id != payload_request.id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!(
+                    "Satellite id path {} does not match payload id {}",
+                    &satellite_id, &payload_request.id
+                ),
+            }),
+        ));
+    }
 
     state
         .constellation_repository
