@@ -4,7 +4,25 @@ use domain::models::{Constellation, EciState, Satellite};
 use ports::{errors::RepositoryError, outbound::ConstellationRepository};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
-const SET_SATELLITE_QUERY: &str = "REPLACE INTO constellation (name, initial, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z) VALUES ($1, $2::timestamp, $3, $4, $5, $6, $7, $8)";
+const SET_SATELLITE_QUERY: &str =
+    "INSERT INTO constellation (name, initial, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z)
+VALUES ($1, $2::timestamp, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (name) DO UPDATE SET
+    initial = EXCLUDED.initial,
+    pos_x = EXCLUDED.pos_x,
+    pos_y = EXCLUDED.pos_y,
+    pos_z = EXCLUDED.pos_z,
+    vel_x = EXCLUDED.vel_x,
+    vel_y = EXCLUDED.vel_y,
+    vel_z = EXCLUDED.vel_z
+WHERE
+    constellation.initial IS DISTINCT FROM EXCLUDED.initial OR
+    constellation.pos_x IS DISTINCT FROM EXCLUDED.pos_x OR
+    constellation.pos_y IS DISTINCT FROM EXCLUDED.pos_y OR
+    constellation.pos_z IS DISTINCT FROM EXCLUDED.pos_z OR
+    constellation.vel_x IS DISTINCT FROM EXCLUDED.vel_x OR
+    constellation.vel_y IS DISTINCT FROM EXCLUDED.vel_y OR
+    constellation.vel_z IS DISTINCT FROM EXCLUDED.vel_z";
 
 pub struct PostgresRepository {
     pool: Pool<Postgres>,
@@ -84,7 +102,7 @@ impl ConstellationRepository for PostgresRepository {
             .bind(satellite.initial_state.vel_z)
             .execute(&self.pool)
             .await
-            .map_err(|_| RepositoryError::Other)?;
+            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
 
         Ok(())
     }
