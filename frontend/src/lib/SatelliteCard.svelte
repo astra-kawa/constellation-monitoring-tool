@@ -41,37 +41,37 @@
         <tr>
           <td>Epoch</td>
           <td>UTC</td>
-          <td>{satellite.initial_state.epoch}</td>
+          <td><input type="text" value={satellite.initial_state.epoch} /></td>
         </tr>
         <tr>
           <td>Position</td>
           <td>X</td>
-          <td>{satellite.initial_state.pos_x}</td>
+          <td><input type="number" value={satellite.initial_state.pos_x} /></td>
         </tr>
         <tr>
           <td>[km]</td>
           <td>Y</td>
-          <td>{satellite.initial_state.pos_y}</td>
+          <td><input type="number" value={satellite.initial_state.pos_y} /></td>
         </tr>
         <tr>
           <td></td>
           <td>Y</td>
-          <td>{satellite.initial_state.pos_z}</td>
+          <td><input type="number" value={satellite.initial_state.pos_z} /></td>
         </tr>
         <tr>
           <td>Velocity</td>
           <td>X</td>
-          <td>{satellite.initial_state.vel_x}</td>
+          <td><input type="number" value={satellite.initial_state.vel_x} /></td>
         </tr>
         <tr>
           <td>[km/s]</td>
           <td>Y</td>
-          <td>{satellite.initial_state.vel_y}</td>
+          <td><input type="number" value={satellite.initial_state.vel_y} /></td>
         </tr>
         <tr>
           <td></td>
           <td>Y</td>
-          <td>{satellite.initial_state.vel_z}</td>
+          <td><input type="number" value={satellite.initial_state.vel_z} /></td>
         </tr>
       </tbody>
     </table>
@@ -97,15 +97,22 @@
     gap: 5px;
   }
 
-  table th:nth-child(3),
-  table td:nth-child(3) {
+  table td:nth-child(3),
+  select,
+  input {
     text-align: right;
   }
 
-  select {
+  select,
+  input {
     border: none;
-
+    background-color: none;
+    background: none;
     font-family: var(--main-font-family);
     font-size: var(--secondary-font-size);
+  }
+
+  input {
+    border-bottom: 1px dashed var(--main-font-colour);
   }
 </style>
