@@ -24,7 +24,7 @@ impl PostgresRepository {
 impl ConstellationRepository for PostgresRepository {
     async fn set_constellation(&self, constellation: Constellation) -> Result<(), RepositoryError> {
         for satellite in constellation.satellites {
-            let query = "INSERT INTO constellation (name, initial, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z) VALUES ($1, $2::timestamp, $3, $4, $5, $6, $7, $8)";
+            let query = "REPLACE INTO constellation (name, initial, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z) VALUES ($1, $2::timestamp, $3, $4, $5, $6, $7, $8)";
             sqlx::query(query)
                 .bind(satellite.id)
                 .bind(satellite.initial_state.epoch.naive_utc().to_string())

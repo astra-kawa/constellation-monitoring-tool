@@ -18,7 +18,7 @@ async fn main() {
         .await
         .expect("failed to bind backend listener");
 
-    let repo = PostgresRepository::new(&env::var("PG_DB").unwrap()).await;
+    let repo = PostgresRepository::new(&env::var("DATABASE_URL").unwrap()).await;
     let propagator = JuliaOrbitPropagator::new();
 
     let app =
