@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import ConstellationDisplay from "./lib/ConstellationDisplay.svelte";
 
-  let message = "Loading backend status...";
+  let healthMessage = "Loading backend status...";
+  let constellationData;
 
   onMount(async () => {
     try {
@@ -11,18 +13,18 @@
       }
 
       const health = await healthResponse.json();
-      message = health.message;
+      healthMessage = health.message;
     } catch (error) {
-      message = "Backend unavailable";
+      healthMessage = "Backend unavailable";
     }
   });
 </script>
 
 <main>
   <p>Fleet Monitoring Tool</p>
-  <p>Backend health: {message}</p>
+  <p>Backend health: {healthMessage}</p>
+  <ConstellationDisplay />
 </main>
 
 <style>
-
 </style>

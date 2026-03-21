@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use domain::{errors::ComputeError, models::Satellite};
-use ports::outbound::OrbitPropagator;
+use domain::{errors::ComputeError, models::Constellation};
+use ports::inbound::OrbitPropagator;
 use serde::{Deserialize, Serialize};
 
 pub struct JuliaOrbitPropagator {
@@ -23,7 +23,7 @@ impl Default for JuliaOrbitPropagator {
 
 #[derive(Deserialize, Serialize)]
 pub struct JuliaPropagationRequest {
-    pub constellation: Vec<Satellite>,
+    pub constellation: Constellation,
     pub duration_seconds: f64,
     pub step_seconds: f64,
 }
@@ -32,7 +32,7 @@ pub struct JuliaPropagationRequest {
 impl OrbitPropagator for JuliaOrbitPropagator {
     async fn propagate(
         &self,
-        constellation: Vec<domain::models::Satellite>,
+        constellation: Constellation,
         duration: std::time::Duration,
         step: std::time::Duration,
     ) -> Result<Vec<domain::models::Ephemeris>, domain::errors::ComputeError> {
