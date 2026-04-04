@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  let healthMessage = "Loading backend status...";
-  let messageClass = "backend-idle";
+  let healthMessage = $state("Loading backend status...");
+  let messageClass = $state("backend-idle");
 
   onMount(async () => {
     try {
@@ -12,8 +12,8 @@
         messageClass = "backend-unhealthy";
       }
 
+      // todo - display health message
       const health = await healthResponse.json();
-      //healthMessage = health.message;
       healthMessage = "BACKEND CONNECTED";
       messageClass = "backend-healthy";
     } catch (error) {

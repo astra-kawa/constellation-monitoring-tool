@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import SatelliteCard from "./SatelliteCard.svelte";
-  import type { Satellite } from "../lib/types";
+  import type { Satellite } from "$lib/types";
   import ConstellationActionsDisplay from "./ConstellationActionsDisplay.svelte";
 
   async function refreshConstellationData() {
