@@ -30,7 +30,7 @@
 <div class="constellation-display">
   <ConstellationActionsDisplay {refreshConstellationData} />
   <div class="satellite-data">
-    {#each constellationData as satellite: Satellite}
+    {#each constellationData as satellite: Satellite (satellite.id)}
       <SatelliteCard {satellite} {refreshConstellationData} />
     {/each}
   </div>
