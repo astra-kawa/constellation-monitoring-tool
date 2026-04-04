@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
 
   const getDayOfYear = (date: Date) => {
-    const startOfYear = new Date(date.getUTCFullYear(), 0, 1);
+    const startOfYear = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
     const differenceInMilliseconds = date.getTime() - startOfYear.getTime();
 
     const millisecondsPerDay = 1000 * 60 * 60 * 24;
