@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Satellite } from "../lib/types";
+  import type { Satellite } from "$lib/types";
 
   let {
     satellite,
