@@ -142,7 +142,7 @@
         </tr>
         <tr>
           <td>Position</td>
-          <td>X</td>
+          <td>x</td>
           <td
             ><input
               type="number"
@@ -156,7 +156,7 @@
         </tr>
         <tr>
           <td>[km]</td>
-          <td>Y</td>
+          <td>y</td>
           <td
             ><input
               type="number"
@@ -170,7 +170,7 @@
         </tr>
         <tr>
           <td></td>
-          <td>Y</td>
+          <td>z</td>
           <td
             ><input
               type="number"
@@ -184,7 +184,7 @@
         </tr>
         <tr>
           <td>Velocity</td>
-          <td>X</td>
+          <td>x</td>
           <td
             ><input
               type="number"
@@ -198,7 +198,7 @@
         </tr>
         <tr>
           <td>[km/s]</td>
-          <td>Y</td>
+          <td>y</td>
           <td
             ><input
               type="number"
@@ -212,7 +212,7 @@
         </tr>
         <tr>
           <td></td>
-          <td>Y</td>
+          <td>z</td>
           <td
             ><input
               type="number"
