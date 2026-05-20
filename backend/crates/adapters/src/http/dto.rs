@@ -1,6 +1,5 @@
 use domain::models::Ephemeris;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
@@ -12,10 +11,11 @@ pub struct MessageResponse {
     pub message: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct PropagationRequest {
-    pub duration: Duration,
-    pub step: Duration,
+    // todo - properly implement Duration in request, choose time units in ui
+    pub duration_seconds: f64,
+    pub step_seconds: f64,
 }
 
 #[derive(Deserialize, Serialize)]

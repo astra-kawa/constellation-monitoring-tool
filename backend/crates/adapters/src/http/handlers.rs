@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::http::dto::{ErrorResponse, MessageResponse, PropagationRequest, PropagationResponse};
 use application::app::AppState;
 use axum::{
@@ -157,10 +159,11 @@ pub async fn propagate(
     payload: Result<Json<PropagationRequest>, JsonRejection>,
 ) -> Result<Json<PropagationResponse>, (StatusCode, Json<ErrorResponse>)> {
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
+        println!("Invalid propagation request: {error}");
         (
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
-                error: format!("invalid propagation request: {error}"),
+                error: format!("Invalid propagation request: {error}"),
             }),
         )
     })?;
@@ -170,6 +173,7 @@ pub async fn propagate(
         .get_constellation()
         .await
         .map_err(|error| {
+            println!("Constellation repository error: {error}");
             (
                 StatusCode::from_u16(500).unwrap(),
                 Json(ErrorResponse {
@@ -182,11 +186,12 @@ pub async fn propagate(
         .propagator
         .propagate(
             constellation,
-            payload_request.duration,
-            payload_request.step,
+            Duration::from_secs_f64(payload_request.duration_seconds),
+            Duration::from_secs_f64(payload_request.step_seconds),
         )
         .await
         .map_err(|error| {
+            println!("Compute error: {error}");
             (
                 StatusCode::from_u16(500).unwrap(),
                 Json(ErrorResponse {

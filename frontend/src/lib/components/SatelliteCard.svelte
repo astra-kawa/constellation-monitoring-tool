@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Satellite } from "$lib/types";
+  import { getFormStringValue, getFormNumberValue } from "$lib/utils/utils";
 
   let {
     satellite,
@@ -17,27 +18,6 @@
     saveError = "";
   }
 
-  function getStringValue(formData: FormData, fieldName: string): string {
-    const value = formData.get(fieldName);
-
-    if (typeof value !== "string" || value.trim() === "") {
-      throw new Error(`Missing ${fieldName}`);
-    }
-
-    return value.trim();
-  }
-
-  function getNumberValue(formData: FormData, fieldName: string): number {
-    const value = getStringValue(formData, fieldName);
-    const parsedValue = Number(value);
-
-    if (Number.isNaN(parsedValue)) {
-      throw new Error(`Invalid ${fieldName}`);
-    }
-
-    return parsedValue;
-  }
-
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     clearFeedback();
@@ -49,7 +29,7 @@
     }
 
     const formData = new FormData(form);
-    const stateType = getStringValue(formData, "state_type");
+    const stateType = getFormStringValue(formData, "state_type");
 
     if (stateType !== "eci") {
       saveError = "Only Earth-Centered Inertial state updates are supported.";
@@ -59,13 +39,13 @@
     const payload = {
       id: satellite.id,
       initial_state: {
-        epoch: getStringValue(formData, "epoch"),
-        pos_x: getNumberValue(formData, "pos_x"),
-        pos_y: getNumberValue(formData, "pos_y"),
-        pos_z: getNumberValue(formData, "pos_z"),
-        vel_x: getNumberValue(formData, "vel_x"),
-        vel_y: getNumberValue(formData, "vel_y"),
-        vel_z: getNumberValue(formData, "vel_z"),
+        epoch: getFormNumberValue(formData, "epoch"),
+        pos_x: getFormNumberValue(formData, "pos_x"),
+        pos_y: getFormNumberValue(formData, "pos_y"),
+        pos_z: getFormNumberValue(formData, "pos_z"),
+        vel_x: getFormNumberValue(formData, "vel_x"),
+        vel_y: getFormNumberValue(formData, "vel_y"),
+        vel_z: getFormNumberValue(formData, "vel_z"),
       },
     };
 

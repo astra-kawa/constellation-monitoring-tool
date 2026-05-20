@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getConstellationData } from "$lib/util";
+  import { getFormNumberValue } from "$lib/utils/utils";
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -11,22 +12,12 @@
 
     const formData = new FormData(form);
 
-    const durationValue = formData.get("duration_seconds");
-    if (!durationValue) {
-      return;
-    }
-
-    const stepValue = formData.get("step_seconds");
-    if (!stepValue) {
-      return;
-    }
-
-    // const constellationData = await getConstellationData();
+    const durationValue = getFormNumberValue(formData, "duration_seconds");
+    const stepValue = getFormNumberValue(formData, "step_seconds");
 
     const payload = {
-      duration: durationValue,
-      step: stepValue,
-      // constellation: constellationData,
+      duration_seconds: durationValue,
+      step_seconds: stepValue,
     };
 
     console.log(payload);
@@ -43,11 +34,13 @@
       console.log("Failed to propagate constellation");
     }
 
-    let target = event.target;
-    if (!target) {
-      return;
-    }
-    target.reset();
+    console.log(response);
+
+    // let target = event.target;
+    // if (!target) {
+    //   return;
+    // }
+    // target.reset();
   }
 </script>
 

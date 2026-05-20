@@ -13,25 +13,28 @@ function parse_float(value, name::AbstractString)
 end
 
 function parse_initial_states(payload::Dict{String,Any})
-    raw = payload["constellation"]
-    raw isa AbstractVector || throw(ArgumentError("constellation must be an array"))
-    !isempty(raw) || throw(ArgumentError("constellation must not be empty"))
+    raw = payload["constellation"]["satellites"]
+    raw isa AbstractVector || @error "constellation.satellites must be an array"
+    !isempty(raw) || @error "constellation.satellites must not be empty"
 
     states = NTuple{6,Float64}[]
     ids = String[]
 
-    for (index, sat) in pairs(raw)
-        sat isa AbstractDict || throw(ArgumentError("constellation[$index] must be an object"))
-        push!(ids, String(get(sat, "id", "sat-$(index)")))
+    for (index, satellite) in enumerate(raw)
+        @info "Parsing satellite $index" satellite
+        satellite isa AbstractDict || @error "constellation.satellites[$index] must be an object"
+
+        push!(ids, String(get(satellite, "id", "sat-$(index)")))
+
         push!(
             states,
             (
-                parse_float(get(sat, "pos_x", nothing), "constellation[$index].initial_state.pos_x"),
-                parse_float(get(sat, "pos_y", nothing), "constellation[$index].initial_state.pos_y"),
-                parse_float(get(sat, "pos_z", nothing), "constellation[$index].initial_state.pos_z"),
-                parse_float(get(sat, "vel_x", nothing), "constellation[$index].initial_state.vel_x"),
-                parse_float(get(sat, "vel_y", nothing), "constellation[$index].initial_state.vel_y"),
-                parse_float(get(sat, "vel_z", nothing), "constellation[$index].initial_state.vel_z"),
+                parse_float(get(satellite["initial_state"], "pos_x", nothing), "constellation.satellites[$index].initial_state.pos_x"),
+                parse_float(get(satellite["initial_state"], "pos_y", nothing), "constellation.satellites[$index].initial_state.pos_y"),
+                parse_float(get(satellite["initial_state"], "pos_z", nothing), "constellation.satellites[$index].initial_state.pos_z"),
+                parse_float(get(satellite["initial_state"], "vel_x", nothing), "constellation.satellites[$index].initial_state.vel_x"),
+                parse_float(get(satellite["initial_state"], "vel_y", nothing), "constellation.satellites[$index].initial_state.vel_y"),
+                parse_float(get(satellite["initial_state"], "vel_z", nothing), "constellation.satellites[$index].initial_state.vel_z"),
             )
         )
     end
@@ -40,25 +43,25 @@ function parse_initial_states(payload::Dict{String,Any})
 end
 
 function grid_including_end(start::Real, duration::Real, step::Real)
-    n = floor(Int, duration/step) + 1
+    n = floor(Int, duration / step) + 1
     v = collect(range(start=start, step=step, length=n))
-    
+
     if v[end] != duration
         push!(v, float(duration))
     end
-    
+
     v[end] = float(duration)
-    
+
     return v
 end
 
 function build_response(duration::Float64, step::Float64, ids, states)
-    spec = ConstellationSpec(length(states); mu = 398600)
+    spec = ConstellationSpec(length(states); mu=398600)
     model, symbols = build_constellation_system(spec)
-    
+
     prob = build_constellation_problem(model, symbols, states, (0.0, duration))
     sol = solve(prob, Tsit5())
-    
+
     ts = grid_including_end(0.0, duration, step)
     sample = sol(ts)
 
@@ -95,16 +98,22 @@ end
 
 function propagate_handler(req::HTTP.Request)
     payload = isempty(req.body) ? Dict{String,Any}() : JSON3.read(req.body, Dict{String,Any})
-    
+
     duration = parse_float(payload["duration_seconds"], "duration_seconds")
     step = parse_float(payload["step_seconds"], "step_seconds")
-    
+
     duration > 0.0 || throw(ArgumentError("duration_seconds must be > 0"))
     step > 0.0 || throw(ArgumentError("step_seconds must be > 0"))
     step <= duration || throw(ArgumentError("step_seconds must be <= duration_seconds"))
+    @info "Parsed duration and step"
 
     ids, states = parse_initial_states(payload)
+    @info "Parsed constellation data"
+
     response_body = build_response(duration, step, ids, states)
+    @info "Generated response body"
+    @info response_body
+
     return HTTP.Response(
         200,
         ["Content-Type" => "application/json"],
