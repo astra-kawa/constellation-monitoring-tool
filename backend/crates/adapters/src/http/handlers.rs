@@ -159,7 +159,6 @@ pub async fn propagate(
     payload: Result<Json<PropagationRequest>, JsonRejection>,
 ) -> Result<Json<PropagationResponse>, (StatusCode, Json<ErrorResponse>)> {
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
-        println!("Invalid propagation request: {error}");
         (
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
@@ -167,6 +166,24 @@ pub async fn propagate(
             }),
         )
     })?;
+
+    if payload_request.duration_seconds <= 0.0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("Invalid propagation request: duration_seconds must be > 0.0"),
+            }),
+        ));
+    }
+
+    if payload_request.step_seconds <= 0.0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("Invalid propagation request: step_seconds must be > 0.0"),
+            }),
+        ));
+    }
 
     let constellation = state
         .constellation_repository
