@@ -3,12 +3,12 @@ use domain::models::{Constellation, Satellite};
 use ports::{errors::RepositoryError, outbound::ConstellationRepository};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
-const SET_SATELLITE_QUERY: &str = "INSERT INTO constellation_test (id, data)
+const SET_SATELLITE_QUERY: &str = "INSERT INTO constellation (id, data)
 VALUES ($1, $2)
 ON CONFLICT (id) DO UPDATE SET
     data = EXCLUDED.data
 WHERE
-    constellation_test.data IS DISTINCT FROM EXCLUDED.data";
+    constellation.data IS DISTINCT FROM EXCLUDED.data";
 
 pub struct PostgresRepository {
     pool: Pool<Postgres>,
@@ -45,7 +45,7 @@ impl ConstellationRepository for PostgresRepository {
     }
 
     async fn get_constellation(&self) -> Result<Constellation, RepositoryError> {
-        let satellite_records = sqlx::query!("SELECT * FROM constellation_test ORDER BY id ASC")
+        let satellite_records = sqlx::query!("SELECT * FROM constellation ORDER BY id ASC")
             .fetch_all(&self.pool)
             .await
             .map_err(|_| RepositoryError::Other)?;
@@ -74,13 +74,11 @@ impl ConstellationRepository for PostgresRepository {
     }
 
     async fn get_satellite(&self, satellite_id: &str) -> Result<Satellite, RepositoryError> {
-        let satellite_record = sqlx::query!(
-            "SELECT * FROM constellation_test WHERE id = $1",
-            satellite_id
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|_| RepositoryError::Other)?;
+        let satellite_record =
+            sqlx::query!("SELECT * FROM constellation WHERE id = $1", satellite_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|_| RepositoryError::Other)?;
 
         let satellite = Satellite {
             id: satellite_record.id,
@@ -92,7 +90,7 @@ impl ConstellationRepository for PostgresRepository {
     }
 
     async fn delete_satellite(&self, satellite_id: &str) -> Result<(), RepositoryError> {
-        sqlx::query!("DELETE FROM constellation WHERE name = $1", satellite_id)
+        sqlx::query!("DELETE FROM constellation WHERE id = $1", satellite_id)
             .execute(&self.pool)
             .await
             .map_err(|_| RepositoryError::Other)?;
