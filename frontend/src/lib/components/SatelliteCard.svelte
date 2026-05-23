@@ -39,7 +39,7 @@
     const payload = {
       id: satellite.id,
       initial_state: {
-        epoch: getFormNumberValue(formData, "epoch"),
+        epoch: getFormStringValue(formData, "epoch"),
         pos_x: getFormNumberValue(formData, "pos_x"),
         pos_y: getFormNumberValue(formData, "pos_y"),
         pos_z: getFormNumberValue(formData, "pos_z"),
