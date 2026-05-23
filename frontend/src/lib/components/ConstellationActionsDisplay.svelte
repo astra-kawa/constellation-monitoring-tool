@@ -24,7 +24,7 @@
       id: value.trim(),
       data: {
         initial_state: {
-          epoch: "2026-01-01 00:00:00.000000 UTC",
+          epoch: "2026-01-01T00:00:00Z",
           pos_x: 0.0,
           pos_y: 0.0,
           pos_z: 0.0,
