@@ -22,14 +22,16 @@
 
     const payload = {
       id: value.trim(),
-      initial_state: {
-        epoch: "2026-01-01T00:00:00Z",
-        pos_x: 0.0,
-        pos_y: 0.0,
-        pos_z: 0.0,
-        vel_x: 0.0,
-        vel_y: 0.0,
-        vel_z: 0.0,
+      data: {
+        initial_state: {
+          epoch: "2026-01-01T00:00:00Z",
+          pos_x: 0.0,
+          pos_y: 0.0,
+          pos_z: 0.0,
+          vel_x: 0.0,
+          vel_y: 0.0,
+          vel_z: 0.0,
+        },
       },
     };
 
