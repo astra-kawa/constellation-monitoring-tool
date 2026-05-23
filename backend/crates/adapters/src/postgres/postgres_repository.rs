@@ -6,7 +6,7 @@ use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 const SET_SATELLITE_QUERY: &str = "INSERT INTO constellation_test (id, data)
 VALUES ($1, $2)
 ON CONFLICT (id) DO UPDATE SET
-    data = EXCLUDED.data,
+    data = EXCLUDED.data
 WHERE
     constellation_test.data IS DISTINCT FROM EXCLUDED.data";
 
@@ -63,12 +63,9 @@ impl ConstellationRepository for PostgresRepository {
     }
 
     async fn set_satellite(&self, satellite: Satellite) -> Result<(), RepositoryError> {
-        let data_string =
-            serde_json::to_string(&satellite.data).map_err(|_| RepositoryError::Other)?;
-
         sqlx::query(SET_SATELLITE_QUERY)
             .bind(satellite.id)
-            .bind(data_string)
+            .bind(sqlx::types::Json(satellite.data))
             .execute(&self.pool)
             .await
             .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
