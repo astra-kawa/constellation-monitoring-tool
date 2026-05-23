@@ -38,14 +38,16 @@
 
     const payload = {
       id: satellite.id,
-      initial_state: {
-        epoch: getFormStringValue(formData, "epoch"),
-        pos_x: getFormNumberValue(formData, "pos_x"),
-        pos_y: getFormNumberValue(formData, "pos_y"),
-        pos_z: getFormNumberValue(formData, "pos_z"),
-        vel_x: getFormNumberValue(formData, "vel_x"),
-        vel_y: getFormNumberValue(formData, "vel_y"),
-        vel_z: getFormNumberValue(formData, "vel_z"),
+      data: {
+        initial_state: {
+          epoch: getFormStringValue(formData, "epoch"),
+          pos_x: getFormNumberValue(formData, "pos_x"),
+          pos_y: getFormNumberValue(formData, "pos_y"),
+          pos_z: getFormNumberValue(formData, "pos_z"),
+          vel_x: getFormNumberValue(formData, "vel_x"),
+          vel_y: getFormNumberValue(formData, "vel_y"),
+          vel_z: getFormNumberValue(formData, "vel_z"),
+        },
       },
     };
 
@@ -115,7 +117,7 @@
               type="text"
               name="epoch"
               id="epoch-{satellite.id}"
-              value={satellite.initial_state.epoch}
+              value={satellite.data.initial_state.epoch}
               required
             /></td
           >
@@ -128,7 +130,7 @@
               type="number"
               name="pos_x"
               id="pos_x-{satellite.id}"
-              value={satellite.initial_state.pos_x}
+              value={satellite.data.initial_state.pos_x}
               step="any"
               required
             /></td
@@ -142,7 +144,7 @@
               type="number"
               name="pos_y"
               id="pos_y-{satellite.id}"
-              value={satellite.initial_state.pos_y}
+              value={satellite.data.initial_state.pos_y}
               step="any"
               required
             /></td
@@ -156,7 +158,7 @@
               type="number"
               name="pos_z"
               id="pos_z-{satellite.id}"
-              value={satellite.initial_state.pos_z}
+              value={satellite.data.initial_state.pos_z}
               step="any"
               required
             /></td
@@ -170,7 +172,7 @@
               type="number"
               name="vel_x"
               id="vel_x-{satellite.id}"
-              value={satellite.initial_state.vel_x}
+              value={satellite.data.initial_state.vel_x}
               step="any"
               required
             /></td
@@ -184,7 +186,7 @@
               type="number"
               name="vel_y"
               id="vel_y-{satellite.id}"
-              value={satellite.initial_state.vel_y}
+              value={satellite.data.initial_state.vel_y}
               step="any"
               required
             /></td
@@ -198,7 +200,7 @@
               type="number"
               name="vel_z"
               id="vel_z-{satellite.id}"
-              value={satellite.initial_state.vel_z}
+              value={satellite.data.initial_state.vel_z}
               step="any"
               required
             /></td
