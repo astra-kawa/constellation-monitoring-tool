@@ -6,6 +6,7 @@
   color-scheme: light dark;
   --background-colour: light-dark(white, black);
   --main-font-colour: light-dark(black, white);
+  --button-text-colour: white;
 
   --idle-colour: #78716c;
   --healthy-colour: light-dark(#10b981, #34d399);
@@ -26,4 +27,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  color: var(--button-text-colour);
 }

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::http::dto::{ErrorResponse, MessageResponse, PropagationRequest, PropagationResponse};
 use application::app::AppState;
 use axum::{
@@ -160,16 +162,35 @@ pub async fn propagate(
         (
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
-                error: format!("invalid propagation request: {error}"),
+                error: format!("Invalid propagation request: {error}"),
             }),
         )
     })?;
+
+    if payload_request.duration_seconds <= 0.0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("Invalid propagation request: duration_seconds must be > 0.0"),
+            }),
+        ));
+    }
+
+    if payload_request.step_seconds <= 0.0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("Invalid propagation request: step_seconds must be > 0.0"),
+            }),
+        ));
+    }
 
     let constellation = state
         .constellation_repository
         .get_constellation()
         .await
         .map_err(|error| {
+            println!("Constellation repository error: {error}");
             (
                 StatusCode::from_u16(500).unwrap(),
                 Json(ErrorResponse {
@@ -182,11 +203,12 @@ pub async fn propagate(
         .propagator
         .propagate(
             constellation,
-            payload_request.duration,
-            payload_request.step,
+            Duration::from_secs_f64(payload_request.duration_seconds),
+            Duration::from_secs_f64(payload_request.step_seconds),
         )
         .await
         .map_err(|error| {
+            println!("Compute error: {error}");
             (
                 StatusCode::from_u16(500).unwrap(),
                 Json(ErrorResponse {

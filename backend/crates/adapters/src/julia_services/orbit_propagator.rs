@@ -1,5 +1,8 @@
 use async_trait::async_trait;
-use domain::{errors::ComputeError, models::Constellation};
+use domain::{
+    errors::ComputeError,
+    models::{Constellation, Ephemeris},
+};
 use ports::inbound::OrbitPropagator;
 use serde::{Deserialize, Serialize};
 
@@ -28,6 +31,11 @@ pub struct JuliaPropagationRequest {
     pub step_seconds: f64,
 }
 
+#[derive(Deserialize)]
+pub struct JuliaPropagationResponse {
+    pub satellites: Vec<Ephemeris>,
+}
+
 #[async_trait]
 impl OrbitPropagator for JuliaOrbitPropagator {
     async fn propagate(
@@ -42,14 +50,30 @@ impl OrbitPropagator for JuliaOrbitPropagator {
             step_seconds: step.as_secs_f64(),
         };
 
-        let _response = self
+        let response = self
             .client
-            .post("127.0.0.1:4001/propagate")
+            .post("http://127.0.0.1:4001/propagate")
             .json(&payload_request)
             .send()
             .await
-            .map_err(|_| ComputeError::Other)?;
+            .map_err(|err| {
+                println!("OrbitPropagator request error: {}", err);
+                ComputeError::Other
+            })?
+            .error_for_status()
+            .map_err(|err| {
+                println!("OrbitPropagator response error: {}", err);
+                ComputeError::Other
+            })?;
 
-        todo!()
+        let payload = response
+            .json::<JuliaPropagationResponse>()
+            .await
+            .map_err(|err| {
+                println!("OrbitPropagator response parse error: {}", err);
+                ComputeError::Other
+            })?;
+
+        Ok(payload.satellites)
     }
 }
