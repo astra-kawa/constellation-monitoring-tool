@@ -1,4 +1,4 @@
-use domain::models::Ephemeris;
+use domain::models::SatelliteEphemeris;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -20,5 +20,5 @@ pub struct PropagationRequest {
 
 #[derive(Deserialize, Serialize)]
 pub struct PropagationResponse {
-    pub ephemerides: Vec<Ephemeris>,
+    pub ephemerides: Vec<SatelliteEphemeris>,
 }

@@ -9,4 +9,8 @@ pub trait ConstellationRepository: Send + Sync {
     async fn set_satellite(&self, satellite: Satellite) -> Result<(), RepositoryError>;
     async fn get_satellite(&self, satellite_id: &str) -> Result<Satellite, RepositoryError>;
     async fn delete_satellite(&self, satellite_id: &str) -> Result<(), RepositoryError>;
+    // async fn set_satellite_ephemeris();
+    // async fn set_constellation_ephemerides();
+    // async fn get_satellite_ephemeris();
+    // async fn get constellation_ephemerides();
 }

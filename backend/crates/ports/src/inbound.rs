@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use domain::{
     errors::ComputeError,
-    models::{Constellation, Ephemeris},
+    models::{Constellation, SatelliteEphemeris},
 };
 use std::time::Duration;
 
@@ -12,5 +12,5 @@ pub trait OrbitPropagator: Send + Sync {
         constellation: Constellation,
         duration: Duration,
         step: Duration,
-    ) -> Result<Vec<Ephemeris>, ComputeError>;
+    ) -> Result<Vec<SatelliteEphemeris>, ComputeError>;
 }
