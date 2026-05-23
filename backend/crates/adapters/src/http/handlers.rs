@@ -171,7 +171,7 @@ pub async fn propagate(
         return Err((
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
-                error: format!("Invalid propagation request: duration_seconds must be > 0.0"),
+                error: "Invalid propagation request: duration_seconds must be > 0.0".to_string(),
             }),
         ));
     }
@@ -180,7 +180,7 @@ pub async fn propagate(
         return Err((
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
-                error: format!("Invalid propagation request: step_seconds must be > 0.0"),
+                error: "Invalid propagation request: step_seconds must be > 0.0".to_string(),
             }),
         ));
     }
