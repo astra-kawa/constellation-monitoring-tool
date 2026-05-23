@@ -29,12 +29,12 @@ function parse_initial_states(payload::Dict{String,Any})
         push!(
             states,
             (
-                parse_float(get(satellite["initial_state"], "pos_x", nothing), "constellation.satellites[$index].initial_state.pos_x"),
-                parse_float(get(satellite["initial_state"], "pos_y", nothing), "constellation.satellites[$index].initial_state.pos_y"),
-                parse_float(get(satellite["initial_state"], "pos_z", nothing), "constellation.satellites[$index].initial_state.pos_z"),
-                parse_float(get(satellite["initial_state"], "vel_x", nothing), "constellation.satellites[$index].initial_state.vel_x"),
-                parse_float(get(satellite["initial_state"], "vel_y", nothing), "constellation.satellites[$index].initial_state.vel_y"),
-                parse_float(get(satellite["initial_state"], "vel_z", nothing), "constellation.satellites[$index].initial_state.vel_z"),
+                parse_float(get(satellite["data"]["initial_state"], "pos_x", nothing), "constellation.satellites[$index].initial_state.pos_x"),
+                parse_float(get(satellite["data"]["initial_state"], "pos_y", nothing), "constellation.satellites[$index].initial_state.pos_y"),
+                parse_float(get(satellite["data"]["initial_state"], "pos_z", nothing), "constellation.satellites[$index].initial_state.pos_z"),
+                parse_float(get(satellite["data"]["initial_state"], "vel_x", nothing), "constellation.satellites[$index].initial_state.vel_x"),
+                parse_float(get(satellite["data"]["initial_state"], "vel_y", nothing), "constellation.satellites[$index].initial_state.vel_y"),
+                parse_float(get(satellite["data"]["initial_state"], "vel_z", nothing), "constellation.satellites[$index].initial_state.vel_z"),
             )
         )
     end
