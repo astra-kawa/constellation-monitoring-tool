@@ -28,6 +28,109 @@ impl PostgresRepository {
 
         Self { pool }
     }
+
+    async fn insert_ephemeris_batch<'a>(
+        &self,
+        rows: &[(
+            &'a SatelliteEphemeris,
+            &'a CartesianState,
+            &'a KeplerianState,
+        )],
+    ) -> Result<(), RepositoryError> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
+            r#"
+            INSERT INTO ephemeris (
+                id,
+                datetime,
+                pos_x,
+                pos_y,
+                pos_z,
+                vel_x,
+                vel_y,
+                vel_z,
+                sma,
+                ecc,
+                inc,
+                raan,
+                arg,
+                ta,
+                reference_frame,
+                source
+            )
+            "#,
+        );
+
+        query_builder.push_values(
+            rows,
+            |mut binding, (ephemeris, cartesian_state, keplerian_state)| {
+                binding
+                    .push_bind(ephemeris.id.clone())
+                    .push_bind(cartesian_state.datetime)
+                    .push_bind(cartesian_state.pos_x)
+                    .push_bind(cartesian_state.pos_y)
+                    .push_bind(cartesian_state.pos_z)
+                    .push_bind(cartesian_state.vel_x)
+                    .push_bind(cartesian_state.vel_y)
+                    .push_bind(cartesian_state.vel_z)
+                    .push_bind(keplerian_state.sma_km)
+                    .push_bind(keplerian_state.eccentricity)
+                    .push_bind(keplerian_state.inclination_deg)
+                    .push_bind(keplerian_state.raan_deg)
+                    .push_bind(keplerian_state.arg_periapsis_deg)
+                    .push_bind(keplerian_state.true_anomaly_deg)
+                    .push_bind(cartesian_state.reference_frame.to_string())
+                    .push_bind(cartesian_state.source.to_string());
+            },
+        );
+
+        query_builder.push(
+            r#"
+            ON CONFLICT (id, datetime) DO UPDATE SET
+                pos_x = EXCLUDED.pos_x,
+                pos_y = EXCLUDED.pos_y,
+                pos_z = EXCLUDED.pos_z,
+                vel_x = EXCLUDED.vel_x,
+                vel_y = EXCLUDED.vel_y,
+                vel_z = EXCLUDED.vel_z,
+                sma = EXCLUDED.sma,
+                ecc = EXCLUDED.ecc,
+                inc = EXCLUDED.inc,
+                raan = EXCLUDED.raan,
+                arg = EXCLUDED.arg,
+                ta = EXCLUDED.ta,
+                reference_frame = EXCLUDED.reference_frame,
+                source = EXCLUDED.source
+            WHERE
+                ephemeris.pos_x IS DISTINCT FROM EXCLUDED.pos_x OR
+                ephemeris.pos_y IS DISTINCT FROM EXCLUDED.pos_y OR
+                ephemeris.pos_z IS DISTINCT FROM EXCLUDED.pos_z OR
+                ephemeris.vel_x IS DISTINCT FROM EXCLUDED.vel_x OR
+                ephemeris.vel_y IS DISTINCT FROM EXCLUDED.vel_y OR
+                ephemeris.vel_z IS DISTINCT FROM EXCLUDED.vel_z OR
+                ephemeris.sma IS DISTINCT FROM EXCLUDED.sma OR
+                ephemeris.ecc IS DISTINCT FROM EXCLUDED.ecc OR
+                ephemeris.inc IS DISTINCT FROM EXCLUDED.inc OR
+                ephemeris.raan IS DISTINCT FROM EXCLUDED.raan OR
+                ephemeris.arg IS DISTINCT FROM EXCLUDED.arg OR
+                ephemeris.ta IS DISTINCT FROM EXCLUDED.ta OR
+                ephemeris.reference_frame IS DISTINCT FROM EXCLUDED.reference_frame OR
+                ephemeris.source IS DISTINCT FROM EXCLUDED.source
+            "#,
+        );
+
+        let query = query_builder.build();
+
+        query
+            .execute(&self.pool)
+            .await
+            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
+
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -111,89 +214,28 @@ impl ConstellationRepository for PostgresRepository {
             .await
             .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
 
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
-            r#"
-            INSERT INTO ephemeris (
-                id, datetime,
-                pos_x, pos_y, pos_z,
-                vel_x, vel_y, vel_z,
-                sma, ecc, inc, raan, arg, ta,
-                reference_frame, source
-            )"#,
-        );
+        // todo - make batch size configurable
+        let batch_size = 3000;
+        let mut batch = Vec::with_capacity(batch_size);
 
-        query_builder.push_values(
-            ephemerides.iter().flat_map(|ephemeris| {
-                ephemeris
-                    .cartesian_ephemeris
-                    .iter()
-                    .zip(ephemeris.keplerian_ephemeris.iter())
-                    .map(move |(cartesian_state, keplerian_state)| {
-                        (ephemeris, cartesian_state, keplerian_state)
-                    })
-            }),
-            |mut binding, (ephemeris, cartesian_state, keplerian_state)| {
-                binding
-                    .push_bind(ephemeris.id.clone())
-                    .push_bind(cartesian_state.datetime)
-                    .push_bind(cartesian_state.pos_x)
-                    .push_bind(cartesian_state.pos_y)
-                    .push_bind(cartesian_state.pos_z)
-                    .push_bind(cartesian_state.vel_x)
-                    .push_bind(cartesian_state.vel_y)
-                    .push_bind(cartesian_state.vel_z)
-                    .push_bind(keplerian_state.sma_km)
-                    .push_bind(keplerian_state.eccentricity)
-                    .push_bind(keplerian_state.inclination_deg)
-                    .push_bind(keplerian_state.raan_deg)
-                    .push_bind(keplerian_state.arg_periapsis_deg)
-                    .push_bind(keplerian_state.true_anomaly_deg)
-                    .push_bind(cartesian_state.reference_frame.to_string())
-                    .push_bind(cartesian_state.source.to_string());
-            },
-        );
+        for ephemeris in ephemerides {
+            for (cartesian_state, keplerian_state) in ephemeris
+                .cartesian_ephemeris
+                .iter()
+                .zip(ephemeris.keplerian_ephemeris.iter())
+            {
+                batch.push((ephemeris, cartesian_state, keplerian_state));
 
-        query_builder.push(
-            r#"
-            ON CONFLICT (id, datetime) DO UPDATE SET
-                pos_x = EXCLUDED.pos_x,
-                pos_y = EXCLUDED.pos_y,
-                pos_z = EXCLUDED.pos_z,
-                vel_x = EXCLUDED.vel_x,
-                vel_y = EXCLUDED.vel_y,
-                vel_z = EXCLUDED.vel_z,
-                sma = EXCLUDED.sma,
-                ecc = EXCLUDED.ecc,
-                inc = EXCLUDED.inc,
-                raan = EXCLUDED.raan,
-                arg = EXCLUDED.arg,
-                ta = EXCLUDED.ta,
-                reference_frame = EXCLUDED.reference_frame,
-                source = EXCLUDED.source
-            WHERE
-                ephemeris.pos_x IS DISTINCT FROM EXCLUDED.pos_x OR
-                ephemeris.pos_y IS DISTINCT FROM EXCLUDED.pos_y OR
-                ephemeris.pos_z IS DISTINCT FROM EXCLUDED.pos_z OR
-                ephemeris.vel_x IS DISTINCT FROM EXCLUDED.vel_x OR
-                ephemeris.vel_y IS DISTINCT FROM EXCLUDED.vel_y OR
-                ephemeris.vel_z IS DISTINCT FROM EXCLUDED.vel_z OR
-                ephemeris.sma IS DISTINCT FROM EXCLUDED.sma OR
-                ephemeris.ecc IS DISTINCT FROM EXCLUDED.ecc OR
-                ephemeris.inc IS DISTINCT FROM EXCLUDED.inc OR
-                ephemeris.raan IS DISTINCT FROM EXCLUDED.raan OR
-                ephemeris.arg IS DISTINCT FROM EXCLUDED.arg OR
-                ephemeris.ta IS DISTINCT FROM EXCLUDED.ta OR
-                ephemeris.reference_frame IS DISTINCT FROM EXCLUDED.reference_frame OR
-                ephemeris.source IS DISTINCT FROM EXCLUDED.source
-            "#,
-        );
+                if batch.len() >= batch_size {
+                    self.insert_ephemeris_batch(&batch).await?;
+                    batch.clear();
+                }
+            }
+        }
 
-        let query = query_builder.build();
-
-        query
-            .execute(&self.pool)
-            .await
-            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
+        if !batch.is_empty() {
+            self.insert_ephemeris_batch(&batch).await?;
+        }
 
         Ok(())
     }
