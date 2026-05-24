@@ -14,39 +14,6 @@ ON CONFLICT (id) DO UPDATE SET
 WHERE
     constellation.data IS DISTINCT FROM EXCLUDED.data";
 
-const SET_EPHEMERIS_QUERY: &str = "INSERT INTO ephemeris (id, datetime, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, sma, ecc, inc, raan, arg, ta, reference_frame, source)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-ON CONFLICT (id, datetime) DO UPDATE SET
-    pos_x = EXCLUDED.pos_x,
-    pos_y = EXCLUDED.pos_y,
-    pos_z = EXCLUDED.pos_z,
-    vel_x = EXCLUDED.vel_x,
-    vel_y = EXCLUDED.vel_y,
-    vel_z = EXCLUDED.vel_z,
-    sma = EXCLUDED.sma,
-    ecc = EXCLUDED.ecc,
-    inc = EXCLUDED.inc,
-    raan = EXCLUDED.raan,
-    arg = EXCLUDED.arg,
-    ta = EXCLUDED.ta,
-    reference_frame = EXCLUDED.reference_frame,
-    source = EXCLUDED.source
-WHERE
-    ephemeris.pos_x IS DISTINCT FROM EXCLUDED.pos_x,
-    ephemeris.pos_y IS DISTINCT FROM EXCLUDED.pos_y,
-    ephemeris.pos_z IS DISTINCT FROM EXCLUDED.pos_z,
-    ephemeris.vel_x IS DISTINCT FROM EXCLUDED.vel_x,
-    ephemeris.vel_y IS DISTINCT FROM EXCLUDED.vel_y,
-    ephemeris.vel_z IS DISTINCT FROM EXCLUDED.vel_z,
-    ephemeris.sma IS DISTINCT FROM EXCLUDED.sma,
-    ephemeris.ecc IS DISTINCT FROM EXCLUDED.ecc,
-    ephemeris.inc IS DISTINCT FROM EXCLUDED.inc,
-    ephemeris.raan IS DISTINCT FROM EXCLUDED.raan,
-    ephemeris.arg IS DISTINCT FROM EXCLUDED.arg,
-    ephemeris.ta IS DISTINCT FROM EXCLUDED.ta,
-    ephemeris.reference_frame IS DISTINCT FROM EXCLUDED.reference_frame,
-    ephemeris.source IS DISTINCT FROM EXCLUDED.source";
-
 pub struct PostgresRepository {
     pool: Pool<Postgres>,
 }
@@ -137,19 +104,37 @@ impl ConstellationRepository for PostgresRepository {
 
     async fn set_constellation_ephemerides(
         &self,
-        ephemerides: Vec<SatelliteEphemeris>,
+        ephemerides: &[SatelliteEphemeris],
     ) -> Result<(), RepositoryError> {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SET_EPHEMERIS_QUERY);
+        sqlx::query("TRUNCATE TABLE ephemeris")
+            .execute(&self.pool)
+            .await
+            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
 
-        // todo - investigate performance of this query
-        query_builder.push_values(ephemerides, |mut binding, ephemeris| {
-            for (cartesian_state, keplerian_state) in ephemeris
-                .cartesian_ephemeris
-                .iter()
-                .zip(ephemeris.keplerian_ephemeris.iter())
-            {
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
+            r#"
+            INSERT INTO ephemeris (
+                id, datetime,
+                pos_x, pos_y, pos_z,
+                vel_x, vel_y, vel_z,
+                sma, ecc, inc, raan, arg, ta,
+                reference_frame, source
+            )"#,
+        );
+
+        query_builder.push_values(
+            ephemerides.iter().flat_map(|ephemeris| {
+                ephemeris
+                    .cartesian_ephemeris
+                    .iter()
+                    .zip(ephemeris.keplerian_ephemeris.iter())
+                    .map(move |(cartesian_state, keplerian_state)| {
+                        (ephemeris, cartesian_state, keplerian_state)
+                    })
+            }),
+            |mut binding, (ephemeris, cartesian_state, keplerian_state)| {
                 binding
-                    .push_bind(ephemeris.id.to_owned())
+                    .push_bind(ephemeris.id.clone())
                     .push_bind(cartesian_state.datetime)
                     .push_bind(cartesian_state.pos_x)
                     .push_bind(cartesian_state.pos_y)
@@ -165,10 +150,46 @@ impl ConstellationRepository for PostgresRepository {
                     .push_bind(keplerian_state.true_anomaly_deg)
                     .push_bind(cartesian_state.reference_frame.to_string())
                     .push_bind(cartesian_state.source.to_string());
-            }
-        });
+            },
+        );
+
+        query_builder.push(
+            r#"
+            ON CONFLICT (id, datetime) DO UPDATE SET
+                pos_x = EXCLUDED.pos_x,
+                pos_y = EXCLUDED.pos_y,
+                pos_z = EXCLUDED.pos_z,
+                vel_x = EXCLUDED.vel_x,
+                vel_y = EXCLUDED.vel_y,
+                vel_z = EXCLUDED.vel_z,
+                sma = EXCLUDED.sma,
+                ecc = EXCLUDED.ecc,
+                inc = EXCLUDED.inc,
+                raan = EXCLUDED.raan,
+                arg = EXCLUDED.arg,
+                ta = EXCLUDED.ta,
+                reference_frame = EXCLUDED.reference_frame,
+                source = EXCLUDED.source
+            WHERE
+                ephemeris.pos_x IS DISTINCT FROM EXCLUDED.pos_x OR
+                ephemeris.pos_y IS DISTINCT FROM EXCLUDED.pos_y OR
+                ephemeris.pos_z IS DISTINCT FROM EXCLUDED.pos_z OR
+                ephemeris.vel_x IS DISTINCT FROM EXCLUDED.vel_x OR
+                ephemeris.vel_y IS DISTINCT FROM EXCLUDED.vel_y OR
+                ephemeris.vel_z IS DISTINCT FROM EXCLUDED.vel_z OR
+                ephemeris.sma IS DISTINCT FROM EXCLUDED.sma OR
+                ephemeris.ecc IS DISTINCT FROM EXCLUDED.ecc OR
+                ephemeris.inc IS DISTINCT FROM EXCLUDED.inc OR
+                ephemeris.raan IS DISTINCT FROM EXCLUDED.raan OR
+                ephemeris.arg IS DISTINCT FROM EXCLUDED.arg OR
+                ephemeris.ta IS DISTINCT FROM EXCLUDED.ta OR
+                ephemeris.reference_frame IS DISTINCT FROM EXCLUDED.reference_frame OR
+                ephemeris.source IS DISTINCT FROM EXCLUDED.source
+            "#,
+        );
 
         let query = query_builder.build();
+
         query
             .execute(&self.pool)
             .await

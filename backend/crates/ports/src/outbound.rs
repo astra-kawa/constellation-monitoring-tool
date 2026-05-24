@@ -11,7 +11,7 @@ pub trait ConstellationRepository: Send + Sync {
     async fn delete_satellite(&self, satellite_id: &str) -> Result<(), RepositoryError>;
     async fn set_constellation_ephemerides(
         &self,
-        ephemerides: Vec<SatelliteEphemeris>,
+        ephemerides: &[SatelliteEphemeris],
     ) -> Result<(), RepositoryError>;
     async fn get_constellation_ephemerides(
         &self,

@@ -217,6 +217,20 @@ pub async fn propagate(
             )
         })?;
 
+    state
+        .constellation_repository
+        .set_constellation_ephemerides(&propagate_result)
+        .await
+        .map_err(|error| {
+            println!("Constellation repository error: {error}");
+            (
+                StatusCode::from_u16(500).unwrap(),
+                Json(ErrorResponse {
+                    error: format!("Constellation repository error: {error}"),
+                }),
+            )
+        })?;
+
     Ok(Json(PropagationResponse {
         ephemerides: propagate_result,
     }))
