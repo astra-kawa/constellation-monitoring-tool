@@ -1,11 +1,12 @@
 include("constellation_model.jl")
 using .ConstellationModel
-using HTTP
-using JSON3
-using OrdinaryDiffEq
+using HTTP, JSON3, OrdinaryDiffEq, Dates
 
 const HOST = "127.0.0.1"
 const PORT = 4001
+
+const DT_FORMAT = dateformat"yyyy-mm-ddTHH:MM:SSZ";
+epochs = Dict{String,DateTime}()
 
 function parse_float(value, name::AbstractString)
     value isa Real || throw(ArgumentError("$name must be numeric"))
@@ -37,6 +38,8 @@ function parse_initial_states(payload::Dict{String,Any})
                 parse_float(get(satellite["data"]["initial_state"], "vel_z", nothing), "constellation.satellites[$index].initial_state.vel_z"),
             )
         )
+
+        push!(epochs, satellite["id"] => DateTime(satellite["data"]["initial_state"]["epoch"], DT_FORMAT))
     end
 
     return ids, states
@@ -67,32 +70,53 @@ function build_response(duration::Float64, step::Float64, ids, states)
 
     satellites = Vector{Any}(undef, spec.nsat)
     for i in 1:spec.nsat
+        cartesian_ephemeris = Vector{Any}(undef, length(ts))
+        keplerian_ephemeris = Vector{Any}(undef, length(ts))
+
         pos_x_vector = sample[getproperty(model, symbols.pos_x_name[i])]
         pos_y_vector = sample[getproperty(model, symbols.pos_y_name[i])]
         pos_z_vector = sample[getproperty(model, symbols.pos_z_name[i])]
+        vel_x_vector = sample[getproperty(model, symbols.vel_x_name[i])]
+        vel_y_vector = sample[getproperty(model, symbols.vel_y_name[i])]
+        vel_z_vector = sample[getproperty(model, symbols.vel_z_name[i])]
 
-        trajectory = Vector{Any}(undef, length(ts))
-        for k in eachindex(ts)
-            trajectory[k] = Dict(
-                "t" => ts[k],
-                "x" => pos_x_vector[k],
-                "y" => pos_y_vector[k],
-                "z" => pos_z_vector[k],
+        for (k, time) in enumerate(ts)
+            datetime = epochs[ids[i]] + Second(time)
+
+            cartesian_ephemeris[k] = Dict(
+                "datetime" => Dates.format(datetime, DT_FORMAT),
+                "pos_x" => pos_x_vector[k],
+                "pos_y" => pos_y_vector[k],
+                "pos_z" => pos_z_vector[k],
+                "vel_x" => vel_x_vector[k],
+                "vel_y" => vel_y_vector[k],
+                "vel_z" => vel_z_vector[k],
+                "reference_frame" => "J2000",
+                "source" => "Predicted"
+            )
+
+            keplerian_ephemeris[k] = Dict(
+                "datetime" => Dates.format(datetime, DT_FORMAT),
+                "sma_km" => 0.0,
+                "eccentricity" => 0.0,
+                "inclination_deg" => 0.0,
+                "raan_deg" => 0.0,
+                "arg_periapsis_deg" => 0.0,
+                "true_anomaly_deg" => 0.0,
+                "reference_frame" => "J2000",
+                "source" => "Predicted"
             )
         end
 
         satellites[i] = Dict(
             "id" => ids[i],
-            "trajectory" => trajectory,
+            "cartesian_ephemeris" => cartesian_ephemeris,
+            "keplerian_ephemeris" => keplerian_ephemeris,
         )
     end
 
     return Dict(
         "satellites" => satellites,
-        "metadata" => Dict(
-            "duration_seconds" => duration,
-            "step_seconds" => step,
-        ),
     )
 end
 
@@ -112,7 +136,7 @@ function propagate_handler(req::HTTP.Request)
 
     response_body = build_response(duration, step, ids, states)
     @info "Generated response body"
-    @info response_body
+    # @info response_body
 
     return HTTP.Response(
         200,
@@ -131,6 +155,7 @@ function route(req::HTTP.Request)
         try
             return propagate_handler(req)
         catch err
+            @error err
             return HTTP.Response(
                 400,
                 ["Content-Type" => "application/json"],
