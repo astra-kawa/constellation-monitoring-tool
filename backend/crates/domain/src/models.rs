@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -68,9 +70,35 @@ pub enum ReferenceFrame {
     Teme,
 }
 
+impl FromStr for ReferenceFrame {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<ReferenceFrame, Self::Err> {
+        match input {
+            "J2000" => Ok(ReferenceFrame::J2000),
+            "Itrf" => Ok(ReferenceFrame::Itrf),
+            "Teme" => Ok(ReferenceFrame::Teme),
+            _ => Err(()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum EphemerisSource {
     Predicted,
     Definitive,
     Reconstructed,
+}
+
+impl FromStr for EphemerisSource {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<EphemerisSource, Self::Err> {
+        match input {
+            "Predicted" => Ok(EphemerisSource::Predicted),
+            "Definitive" => Ok(EphemerisSource::Definitive),
+            "Reconstructed" => Ok(EphemerisSource::Reconstructed),
+            _ => Err(()),
+        }
+    }
 }
