@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -83,6 +83,16 @@ impl FromStr for ReferenceFrame {
     }
 }
 
+impl fmt::Display for ReferenceFrame {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ReferenceFrame::J2000 => write!(f, "J2000"),
+            ReferenceFrame::Itrf => write!(f, "Itrf"),
+            ReferenceFrame::Teme => write!(f, "Teme"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum EphemerisSource {
     Predicted,
@@ -99,6 +109,16 @@ impl FromStr for EphemerisSource {
             "Definitive" => Ok(EphemerisSource::Definitive),
             "Reconstructed" => Ok(EphemerisSource::Reconstructed),
             _ => Err(()),
+        }
+    }
+}
+
+impl fmt::Display for EphemerisSource {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            EphemerisSource::Predicted => write!(f, "Predicted"),
+            EphemerisSource::Definitive => write!(f, "Definitive"),
+            EphemerisSource::Reconstructed => write!(f, "Reconstructed"),
         }
     }
 }

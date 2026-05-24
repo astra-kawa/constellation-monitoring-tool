@@ -4,7 +4,7 @@ use domain::models::{
     SatelliteEphemeris,
 };
 use ports::{errors::RepositoryError, outbound::ConstellationRepository};
-use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use sqlx::{Pool, Postgres, QueryBuilder, postgres::PgPoolOptions};
 use std::str::FromStr;
 
 const SET_SATELLITE_QUERY: &str = "INSERT INTO constellation (id, data)
@@ -13,6 +13,39 @@ ON CONFLICT (id) DO UPDATE SET
     data = EXCLUDED.data
 WHERE
     constellation.data IS DISTINCT FROM EXCLUDED.data";
+
+const SET_EPHEMERIS_QUERY: &str = "INSERT INTO ephemeris (id, datetime, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, sma, ecc, inc, raan, arg, ta, reference_frame, source)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+ON CONFLICT (id, datetime) DO UPDATE SET
+    pos_x = EXCLUDED.pos_x,
+    pos_y = EXCLUDED.pos_y,
+    pos_z = EXCLUDED.pos_z,
+    vel_x = EXCLUDED.vel_x,
+    vel_y = EXCLUDED.vel_y,
+    vel_z = EXCLUDED.vel_z,
+    sma = EXCLUDED.sma,
+    ecc = EXCLUDED.ecc,
+    inc = EXCLUDED.inc,
+    raan = EXCLUDED.raan,
+    arg = EXCLUDED.arg,
+    ta = EXCLUDED.ta,
+    reference_frame = EXCLUDED.reference_frame,
+    source = EXCLUDED.source
+WHERE
+    ephemeris.pos_x IS DISTINCT FROM EXCLUDED.pos_x,
+    ephemeris.pos_y IS DISTINCT FROM EXCLUDED.pos_y,
+    ephemeris.pos_z IS DISTINCT FROM EXCLUDED.pos_z,
+    ephemeris.vel_x IS DISTINCT FROM EXCLUDED.vel_x,
+    ephemeris.vel_y IS DISTINCT FROM EXCLUDED.vel_y,
+    ephemeris.vel_z IS DISTINCT FROM EXCLUDED.vel_z,
+    ephemeris.sma IS DISTINCT FROM EXCLUDED.sma,
+    ephemeris.ecc IS DISTINCT FROM EXCLUDED.ecc,
+    ephemeris.inc IS DISTINCT FROM EXCLUDED.inc,
+    ephemeris.raan IS DISTINCT FROM EXCLUDED.raan,
+    ephemeris.arg IS DISTINCT FROM EXCLUDED.arg,
+    ephemeris.ta IS DISTINCT FROM EXCLUDED.ta,
+    ephemeris.reference_frame IS DISTINCT FROM EXCLUDED.reference_frame,
+    ephemeris.source IS DISTINCT FROM EXCLUDED.source";
 
 pub struct PostgresRepository {
     pool: Pool<Postgres>,
@@ -106,6 +139,41 @@ impl ConstellationRepository for PostgresRepository {
         &self,
         ephemerides: Vec<SatelliteEphemeris>,
     ) -> Result<(), RepositoryError> {
+        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(SET_EPHEMERIS_QUERY);
+
+        // todo - investigate performance of this query
+        query_builder.push_values(ephemerides, |mut binding, ephemeris| {
+            for (cartesian_state, keplerian_state) in ephemeris
+                .cartesian_ephemeris
+                .iter()
+                .zip(ephemeris.keplerian_ephemeris.iter())
+            {
+                binding
+                    .push_bind(ephemeris.id.to_owned())
+                    .push_bind(cartesian_state.datetime)
+                    .push_bind(cartesian_state.pos_x)
+                    .push_bind(cartesian_state.pos_y)
+                    .push_bind(cartesian_state.pos_z)
+                    .push_bind(cartesian_state.vel_x)
+                    .push_bind(cartesian_state.vel_y)
+                    .push_bind(cartesian_state.vel_z)
+                    .push_bind(keplerian_state.sma_km)
+                    .push_bind(keplerian_state.eccentricity)
+                    .push_bind(keplerian_state.inclination_deg)
+                    .push_bind(keplerian_state.raan_deg)
+                    .push_bind(keplerian_state.arg_periapsis_deg)
+                    .push_bind(keplerian_state.true_anomaly_deg)
+                    .push_bind(cartesian_state.reference_frame.to_string())
+                    .push_bind(cartesian_state.source.to_string());
+            }
+        });
+
+        let query = query_builder.build();
+        query
+            .execute(&self.pool)
+            .await
+            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
+
         Ok(())
     }
 
