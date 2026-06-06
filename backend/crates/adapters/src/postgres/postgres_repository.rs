@@ -20,7 +20,7 @@ pub struct PostgresRepository {
 }
 
 impl PostgresRepository {
-    #[instrument]
+    #[instrument(skip_all)]
     pub async fn new(url: &str) -> Result<Self, RepositoryError> {
         info!("Connecting to PostgreSQL DB");
 
@@ -199,10 +199,17 @@ impl ConstellationRepository for PostgresRepository {
 
         let mut satellites = Vec::<Satellite>::new();
         for record in satellite_records {
+            let satellite_data: SatelliteData = serde_json::from_str(&record.data.to_string())
+                .map_err(|err| {
+                    let error = format!("Failed to parse satellite data: {}", err);
+                    error!(error);
+
+                    RepositoryError::Other(error)
+                })?;
+
             satellites.push(Satellite {
                 id: record.id,
-                data: serde_json::from_str(&record.data.to_string())
-                    .expect("JSON was not well-formatted"),
+                data: satellite_data,
             });
         }
 
