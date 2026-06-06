@@ -1,11 +1,15 @@
 use async_trait::async_trait;
 use domain::models::{
     CartesianState, Constellation, EphemerisSource, KeplerianState, ReferenceFrame, Satellite,
-    SatelliteEphemeris,
+    SatelliteData, SatelliteEphemeris,
 };
 use ports::{errors::RepositoryError, outbound::ConstellationRepository};
-use sqlx::{Pool, Postgres, QueryBuilder, postgres::PgPoolOptions};
+use sqlx::{
+    ConnectOptions, Pool, Postgres, QueryBuilder,
+    postgres::{PgConnectOptions, PgPoolOptions},
+};
 use std::str::FromStr;
+use tracing::{debug, error, info, instrument};
 
 const SET_SATELLITE_QUERY: &str = "INSERT INTO constellation (id, data)
 VALUES ($1, $2)
@@ -19,16 +23,35 @@ pub struct PostgresRepository {
 }
 
 impl PostgresRepository {
-    pub async fn new(url: &str) -> Self {
+    #[instrument(skip_all)]
+    pub async fn new(url: &str) -> Result<Self, RepositoryError> {
+        info!("Connecting to PostgreSQL DB");
+
+        let options = PgConnectOptions::from_str(url)
+            .map_err(|err| {
+                let error = format!("PgConnectOptions error: {err}");
+                error!(error);
+
+                RepositoryError::Other(error)
+            })?
+            .disable_statement_logging();
+
         let pool: Pool<Postgres> = PgPoolOptions::new()
             .max_connections(1)
-            .connect(url)
+            .connect_with(options)
             .await
-            .expect("Bruh");
+            .map_err(|err| {
+                let error = format!("DB connection error: {err}");
+                error!(error);
 
-        Self { pool }
+                RepositoryError::Other(error)
+            })?;
+
+        info!("PostgresRepository initialized successfully");
+        Ok(Self { pool })
     }
 
+    #[instrument(skip_all)]
     async fn insert_ephemeris_batch<'a>(
         &self,
         rows: &[(
@@ -40,6 +63,8 @@ impl PostgresRepository {
         if rows.is_empty() {
             return Ok(());
         }
+
+        debug!("Inserting ephemeris batch of size: {}", rows.len());
 
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
@@ -124,10 +149,13 @@ impl PostgresRepository {
 
         let query = query_builder.build();
 
-        query
-            .execute(&self.pool)
-            .await
-            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
+        query.execute(&self.pool).await.map_err(|err| {
+            let error = format!("Failed to insert ephemeris batch: {}", err);
+            error!(error);
+            RepositoryError::QueryError(error)
+        })?;
+
+        debug!("Ephemeris batch inserted successfully");
 
         Ok(())
     }
@@ -135,90 +163,170 @@ impl PostgresRepository {
 
 #[async_trait]
 impl ConstellationRepository for PostgresRepository {
+    #[instrument(skip_all)]
     async fn set_constellation(&self, constellation: Constellation) -> Result<(), RepositoryError> {
+        info!("Setting constellation");
+
         for satellite in constellation.satellites {
-            let data_string =
-                serde_json::to_string(&satellite.data).map_err(|_| RepositoryError::Other)?;
+            info!("Setting satellite: {}", satellite.id);
+
+            let data_string = serde_json::to_string(&satellite.data).map_err(|err| {
+                let error = format!("Failed to serialize satellite data: {}", err);
+                error!("{}", error);
+
+                RepositoryError::Other(error)
+            })?;
 
             sqlx::query(SET_SATELLITE_QUERY)
                 .bind(satellite.id)
                 .bind(data_string)
                 .execute(&self.pool)
                 .await
-                .map_err(|_| RepositoryError::Other)?;
+                .map_err(|err| {
+                    let error = format!("Failed to set satellite: {}", err);
+                    error!("{}", error);
+
+                    RepositoryError::QueryError(error)
+                })?;
         }
+
+        info!("Successfully set constellation");
 
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn get_constellation(&self) -> Result<Constellation, RepositoryError> {
+        info!("Getting constellation");
+
         let satellite_records = sqlx::query!("SELECT * FROM constellation ORDER BY id ASC")
             .fetch_all(&self.pool)
             .await
-            .map_err(|_| RepositoryError::Other)?;
+            .map_err(|err| {
+                let error = format!("Failed to get constellation: {}", err);
+                error!(error);
+
+                RepositoryError::QueryError(error)
+            })?;
 
         let mut satellites = Vec::<Satellite>::new();
         for record in satellite_records {
+            let satellite_data: SatelliteData = serde_json::from_str(&record.data.to_string())
+                .map_err(|err| {
+                    let error = format!("Failed to parse satellite data: {}", err);
+                    error!(error);
+
+                    RepositoryError::Other(error)
+                })?;
+
             satellites.push(Satellite {
                 id: record.id,
-                data: serde_json::from_str(&record.data.to_string())
-                    .expect("JSON was not well-formatted"),
+                data: satellite_data,
             });
         }
+
+        info!("Successfully got constellation");
 
         Ok(Constellation { satellites })
     }
 
+    #[instrument(skip_all)]
     async fn set_satellite(&self, satellite: Satellite) -> Result<(), RepositoryError> {
+        info!("Setting satellite: {}", &satellite.id);
+
         sqlx::query(SET_SATELLITE_QUERY)
-            .bind(satellite.id)
+            .bind(&satellite.id)
             .bind(sqlx::types::Json(satellite.data))
             .execute(&self.pool)
             .await
-            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
+            .map_err(|err| {
+                let error = format!("Failed to set satellite: {}", err);
+                error!(error);
+
+                RepositoryError::QueryError(error)
+            })?;
+
+        info!("Successfully set satellite: {}", &satellite.id);
 
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn get_satellite(&self, satellite_id: &str) -> Result<Satellite, RepositoryError> {
+        info!("Getting satellite: {}", satellite_id);
+
         let satellite_record =
             sqlx::query!("SELECT * FROM constellation WHERE id = $1", satellite_id)
                 .fetch_one(&self.pool)
                 .await
-                .map_err(|_| RepositoryError::Other)?;
+                .map_err(|err| {
+                    let error = format!("Failed to get satellite: {}", err);
+                    error!(error);
+
+                    RepositoryError::QueryError(error)
+                })?;
+
+        let satellite_data: SatelliteData =
+            serde_json::from_str(&satellite_record.data.to_string()).map_err(|err| {
+                let error = format!("Failed to parse satellite data: {}", err);
+                error!(error);
+
+                RepositoryError::Other(error)
+            })?;
 
         let satellite = Satellite {
             id: satellite_record.id,
-            data: serde_json::from_str(&satellite_record.data.to_string())
-                .expect("JSON was not well-formatted"),
+            data: satellite_data,
         };
+
+        info!("Successfully got satellite: {}", &satellite.id);
 
         Ok(satellite)
     }
 
+    #[instrument(skip_all)]
     async fn delete_satellite(&self, satellite_id: &str) -> Result<(), RepositoryError> {
+        info!("Deleting satellite: {}", satellite_id);
+
         sqlx::query!("DELETE FROM constellation WHERE id = $1", satellite_id)
             .execute(&self.pool)
             .await
-            .map_err(|_| RepositoryError::Other)?;
+            .map_err(|err| {
+                let error = format!("Failed to delete satellite: {}", err);
+                error!(error);
+
+                RepositoryError::QueryError(error)
+            })?;
+
+        info!("Satellite deleted successfully: {}", satellite_id);
 
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn set_constellation_ephemerides(
         &self,
         ephemerides: &[SatelliteEphemeris],
     ) -> Result<(), RepositoryError> {
+        info!("Setting constellation ephemerides");
+
         sqlx::query("TRUNCATE TABLE ephemeris")
             .execute(&self.pool)
             .await
-            .map_err(|err| RepositoryError::QueryError(err.to_string()))?;
+            .map_err(|err| {
+                let error = format!("Failed to truncate ephemeris table: {}", err);
+                error!(error);
+                RepositoryError::QueryError(error)
+            })?;
 
         // todo - make batch size configurable
         let batch_size = 3000;
+        let mut total_ephemeris_rows: usize = 0;
         let mut batch = Vec::with_capacity(batch_size);
 
         for ephemeris in ephemerides {
+            info!("Inserting ephemeris for satellite: {}", ephemeris.id);
+
             for (cartesian_state, keplerian_state) in ephemeris
                 .cartesian_ephemeris
                 .iter()
@@ -228,6 +336,8 @@ impl ConstellationRepository for PostgresRepository {
 
                 if batch.len() >= batch_size {
                     self.insert_ephemeris_batch(&batch).await?;
+                    total_ephemeris_rows += batch.len();
+
                     batch.clear();
                 }
             }
@@ -235,25 +345,42 @@ impl ConstellationRepository for PostgresRepository {
 
         if !batch.is_empty() {
             self.insert_ephemeris_batch(&batch).await?;
+            total_ephemeris_rows += batch.len();
+            batch.clear();
         }
+
+        info!("Ephemerides inserted successfully: total rows = {total_ephemeris_rows}");
 
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn get_constellation_ephemerides(
         &self,
     ) -> Result<Vec<SatelliteEphemeris>, RepositoryError> {
+        info!("Fetching constellation ephemerides");
+
         let constellation = self.get_constellation().await?;
         let mut ephemerides = Vec::<SatelliteEphemeris>::new();
 
         for satellite in constellation.satellites {
+            info!("Fetching ephemeris for satellite: {}", satellite.id);
+
             let satellite_ephemeris_data = sqlx::query!(
                 "SELECT * FROM ephemeris WHERE id = $1 ORDER BY datetime ASC",
                 satellite.id
             )
             .fetch_all(&self.pool)
             .await
-            .map_err(|_| RepositoryError::Other)?;
+            .map_err(|err| {
+                let error = format!(
+                    "Failed to fetch ephemeris for satellite {}: {}",
+                    satellite.id, err
+                );
+                error!(error);
+
+                RepositoryError::QueryError(error)
+            })?;
 
             let mut cartesian_ephemeris = Vec::<CartesianState>::new();
             let mut keplerian_ephemeris = Vec::<KeplerianState>::new();
@@ -267,10 +394,12 @@ impl ConstellationRepository for PostgresRepository {
                     vel_x: record.vel_x,
                     vel_y: record.vel_y,
                     vel_z: record.vel_z,
-                    reference_frame: ReferenceFrame::from_str(&record.reference_frame)
-                        .map_err(|_| RepositoryError::Other)?,
-                    source: EphemerisSource::from_str(&record.source)
-                        .map_err(|_| RepositoryError::Other)?,
+                    reference_frame: ReferenceFrame::from_str(&record.reference_frame).map_err(
+                        |_| RepositoryError::Other("Invalid reference frame".to_string()),
+                    )?,
+                    source: EphemerisSource::from_str(&record.source).map_err(|_| {
+                        RepositoryError::Other("Invalid ephemeris source".to_string())
+                    })?,
                 });
 
                 // todo - assuming keplerian elements are not always defined for now
@@ -282,10 +411,12 @@ impl ConstellationRepository for PostgresRepository {
                     raan_deg: record.raan.unwrap_or(0.0),
                     arg_periapsis_deg: record.arg.unwrap_or(0.0),
                     true_anomaly_deg: record.ta.unwrap_or(0.0),
-                    reference_frame: ReferenceFrame::from_str(&record.reference_frame)
-                        .map_err(|_| RepositoryError::Other)?,
-                    source: EphemerisSource::from_str(&record.source)
-                        .map_err(|_| RepositoryError::Other)?,
+                    reference_frame: ReferenceFrame::from_str(&record.reference_frame).map_err(
+                        |_| RepositoryError::Other("Invalid reference frame".to_string()),
+                    )?,
+                    source: EphemerisSource::from_str(&record.source).map_err(|_| {
+                        RepositoryError::Other("Invalid ephemeris source".to_string())
+                    })?,
                 });
             }
 
@@ -295,6 +426,8 @@ impl ConstellationRepository for PostgresRepository {
                 keplerian_ephemeris,
             });
         }
+
+        info!("Fetched constellation ephemerides successfully");
 
         Ok(ephemerides)
     }
