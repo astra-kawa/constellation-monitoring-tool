@@ -14,23 +14,22 @@ use lox_space::{
     time::utc::transformations::ToUtc,
 };
 use ports::inbound::OrbitPropagator;
-use tracing::info;
+use tracing::{info, instrument};
 
 pub struct LoxOrbitPropagator {}
 
 #[async_trait]
 impl OrbitPropagator for LoxOrbitPropagator {
+    #[instrument(skip_all)]
     async fn propagate(
         &self,
         constellation: Constellation,
         duration: Duration,
         step: Duration,
     ) -> Result<Vec<SatelliteEphemeris>, ComputeError> {
-        let mut ephemerides: Vec<SatelliteEphemeris> = Vec::new();
-
-        let span = tracing::span!(tracing::Level::INFO, "propagate");
-        let _enter = span.enter();
         info!("Starting propagation for constellation");
+
+        let mut ephemerides: Vec<SatelliteEphemeris> = Vec::new();
 
         for satellite in constellation.satellites {
             let satellite_span =

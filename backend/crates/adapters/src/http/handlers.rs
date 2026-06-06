@@ -8,11 +8,10 @@ use axum::{
     http::StatusCode,
 };
 use domain::models::{Constellation, Satellite};
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 
+#[instrument(skip_all)]
 pub async fn health() -> Json<MessageResponse> {
-    let span = tracing::span!(tracing::Level::INFO, "get_health_handler");
-    let _enter = span.enter();
     info!("GET /health");
 
     // todo: eventually implement actual health checks
@@ -22,11 +21,10 @@ pub async fn health() -> Json<MessageResponse> {
     Json(MessageResponse { message: status })
 }
 
+#[instrument(skip_all)]
 pub async fn get_constellation(
     State(state): State<AppState>,
 ) -> Result<Json<Constellation>, (StatusCode, Json<ErrorResponse>)> {
-    let span = tracing::span!(tracing::Level::INFO, "get_constellation_handler");
-    let _enter = span.enter();
     info!("GET /constellation");
 
     let constellation = state
@@ -53,12 +51,11 @@ pub async fn get_constellation(
     Ok(Json(constellation))
 }
 
+#[instrument(skip_all)]
 pub async fn set_constellation(
     State(state): State<AppState>,
     payload: Result<Json<Constellation>, JsonRejection>,
 ) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
-    let span = tracing::span!(tracing::Level::INFO, "set_constellation_handler");
-    let _enter = span.enter();
     info!("POST /set_constellation");
 
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
@@ -89,13 +86,12 @@ pub async fn set_constellation(
     }))
 }
 
+#[instrument(skip_all)]
 pub async fn set_satellite(
     State(state): State<AppState>,
     Path(satellite_id): Path<String>,
     payload: Result<Json<Satellite>, JsonRejection>,
 ) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
-    let span = tracing::span!(tracing::Level::INFO, "set_satellite_handler");
-    let _enter = span.enter();
     info!("POST /constellation/{satellite_id}");
 
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
@@ -136,12 +132,11 @@ pub async fn set_satellite(
     }))
 }
 
+#[instrument(skip_all)]
 pub async fn get_satellite(
     State(state): State<AppState>,
     Path(satellite_id): Path<String>,
 ) -> Result<Json<Satellite>, (StatusCode, Json<ErrorResponse>)> {
-    let span = tracing::span!(tracing::Level::INFO, "get_satellite_handler");
-    let _enter = span.enter();
     info!("GET /constellation/{satellite_id}");
 
     let satellite = state
@@ -163,12 +158,11 @@ pub async fn get_satellite(
     Ok(Json(satellite))
 }
 
+#[instrument(skip_all)]
 pub async fn delete_satellite(
     State(state): State<AppState>,
     Path(satellite_id): Path<String>,
 ) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
-    let span = tracing::span!(tracing::Level::INFO, "delete_satellite_handler");
-    let _enter = span.enter();
     info!("DELETE /constellation/{satellite_id}");
 
     state
@@ -191,12 +185,11 @@ pub async fn delete_satellite(
     Ok(Json(MessageResponse { message }))
 }
 
+#[instrument(skip_all)]
 pub async fn propagate(
     State(state): State<AppState>,
     payload: Result<Json<PropagationRequest>, JsonRejection>,
 ) -> Result<Json<PropagationResponse>, (StatusCode, Json<ErrorResponse>)> {
-    let span = tracing::span!(tracing::Level::INFO, "propagate_handler");
-    let _enter = span.enter();
     info!("POST /propagate");
 
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {

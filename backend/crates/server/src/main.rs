@@ -6,17 +6,18 @@ use application::app::AppState;
 use dotenv::dotenv;
 use std::env;
 use std::{net::SocketAddr, sync::Arc};
+use tracing::info;
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
-    let span = tracing::span!(tracing::Level::INFO, "main");
+    let span = tracing::span!(tracing::Level::INFO, "server");
     let _enter = span.enter();
 
     dotenv().ok();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("Backend running on http://{addr}");
+    info!("Backend running on http://{addr}");
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
