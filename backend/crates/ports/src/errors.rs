@@ -4,6 +4,6 @@ use thiserror::Error;
 pub enum RepositoryError {
     #[error("Repository query error: {0}")]
     QueryError(String),
-    #[error("Other repository error")]
-    Other,
+    #[error("Other repository error: {0}")]
+    Other(String),
 }

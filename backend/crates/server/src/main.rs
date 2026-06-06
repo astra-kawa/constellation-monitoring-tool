@@ -22,7 +22,9 @@ async fn main() {
         .await
         .expect("failed to bind backend listener");
 
-    let repo = PostgresRepository::new(&env::var("DATABASE_URL").unwrap()).await;
+    let repo = PostgresRepository::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .expect("Unable to create PostgresRepository");
     let propagator = LoxOrbitPropagator {};
 
     let app =
