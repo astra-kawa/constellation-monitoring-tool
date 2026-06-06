@@ -1,1 +1,1 @@
-pub mod lox_propagator;
+pub mod propagator;

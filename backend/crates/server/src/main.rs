@@ -1,5 +1,5 @@
 use adapters::{
-    lox_propagator::lox_propagator::LoxOrbitPropagator,
+    lox_propagator::propagator::LoxOrbitPropagator,
     postgres::postgres_repository::PostgresRepository,
 };
 use application::app::AppState;

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, TimeZone};
 use domain::{
@@ -8,15 +10,8 @@ use domain::{
     },
 };
 use lox_space::{
-    bodies::PointMass,
-    orbits::propagators::j4::J4Propagator,
-    prelude::*,
-    time::{
-        calendar_dates::CalendarDate,
-        time_of_day::CivilTime,
-        time_scales::DynTimeScale::Tdb,
-        utc::{leap_seconds::DefaultLeapSecondsProvider, transformations::ToUtc},
-    },
+    bodies::PointMass, orbits::propagators::j4::J4Propagator, prelude::*,
+    time::utc::transformations::ToUtc,
 };
 use ports::inbound::OrbitPropagator;
 
@@ -27,8 +22,8 @@ impl OrbitPropagator for LoxOrbitPropagator {
     async fn propagate(
         &self,
         constellation: Constellation,
-        duration: std::time::Duration,
-        step: std::time::Duration,
+        duration: Duration,
+        step: Duration,
     ) -> Result<Vec<SatelliteEphemeris>, ComputeError> {
         let mut ephemerides: Vec<SatelliteEphemeris> = Vec::new();
 
@@ -65,8 +60,16 @@ impl OrbitPropagator for LoxOrbitPropagator {
             let mut cartesian_ephemeris: Vec<CartesianState> = Vec::new();
             let mut keplerian_ephemeris: Vec<KeplerianState> = Vec::new();
 
-            for delta in 0..duration.as_secs() {
-                let time_delta = TimeDelta::from_seconds(delta as i64);
+            let range = DurationRange {
+                current: Duration::from_secs(0),
+                end: duration,
+                step,
+            };
+
+            // todo: see if there's a better way to iterate through a range of durations
+            // this seems pretty kludgy
+            for delta in range {
+                let time_delta = TimeDelta::from_nanoseconds(delta.as_nanos() as i64);
                 let interp = trajectory.interpolate(time_delta);
 
                 let cartesian = interp.state();
@@ -119,5 +122,25 @@ impl OrbitPropagator for LoxOrbitPropagator {
         }
 
         Ok(ephemerides)
+    }
+}
+
+struct DurationRange {
+    current: Duration,
+    end: Duration,
+    step: Duration,
+}
+
+impl Iterator for DurationRange {
+    type Item = Duration;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current < self.end {
+            let res = self.current;
+            self.current += self.step;
+            Some(res)
+        } else {
+            None
+        }
     }
 }
