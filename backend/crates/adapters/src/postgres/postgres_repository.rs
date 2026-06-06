@@ -4,9 +4,12 @@ use domain::models::{
     SatelliteData, SatelliteEphemeris,
 };
 use ports::{errors::RepositoryError, outbound::ConstellationRepository};
-use sqlx::{Pool, Postgres, QueryBuilder, postgres::PgPoolOptions};
+use sqlx::{
+    ConnectOptions, Pool, Postgres, QueryBuilder,
+    postgres::{PgConnectOptions, PgPoolOptions},
+};
 use std::str::FromStr;
-use tracing::{error, info, instrument};
+use tracing::{debug, error, info, instrument};
 
 const SET_SATELLITE_QUERY: &str = "INSERT INTO constellation (id, data)
 VALUES ($1, $2)
@@ -24,9 +27,18 @@ impl PostgresRepository {
     pub async fn new(url: &str) -> Result<Self, RepositoryError> {
         info!("Connecting to PostgreSQL DB");
 
+        let options = PgConnectOptions::from_str(url)
+            .map_err(|err| {
+                let error = format!("PgConnectOptions error: {err}");
+                error!(error);
+
+                RepositoryError::Other(error)
+            })?
+            .disable_statement_logging();
+
         let pool: Pool<Postgres> = PgPoolOptions::new()
             .max_connections(1)
-            .connect(url)
+            .connect_with(options)
             .await
             .map_err(|err| {
                 let error = format!("DB connection error: {err}");
@@ -52,7 +64,7 @@ impl PostgresRepository {
             return Ok(());
         }
 
-        info!("Inserting ephemeris batch of size: {}", rows.len());
+        debug!("Inserting ephemeris batch of size: {}", rows.len());
 
         let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
@@ -143,7 +155,7 @@ impl PostgresRepository {
             RepositoryError::QueryError(error)
         })?;
 
-        info!("Ephemeris batch inserted successfully");
+        debug!("Ephemeris batch inserted successfully");
 
         Ok(())
     }
@@ -309,6 +321,7 @@ impl ConstellationRepository for PostgresRepository {
 
         // todo - make batch size configurable
         let batch_size = 3000;
+        let mut total_ephemeris_rows: usize = 0;
         let mut batch = Vec::with_capacity(batch_size);
 
         for ephemeris in ephemerides {
@@ -323,6 +336,8 @@ impl ConstellationRepository for PostgresRepository {
 
                 if batch.len() >= batch_size {
                     self.insert_ephemeris_batch(&batch).await?;
+                    total_ephemeris_rows += batch.len();
+
                     batch.clear();
                 }
             }
@@ -330,9 +345,11 @@ impl ConstellationRepository for PostgresRepository {
 
         if !batch.is_empty() {
             self.insert_ephemeris_batch(&batch).await?;
+            total_ephemeris_rows += batch.len();
+            batch.clear();
         }
 
-        info!("Ephemerides inserted successfully");
+        info!("Ephemerides inserted successfully: total rows = {total_ephemeris_rows}");
 
         Ok(())
     }

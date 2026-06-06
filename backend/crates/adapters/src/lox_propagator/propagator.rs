@@ -14,7 +14,7 @@ use lox_space::{
     time::utc::transformations::ToUtc,
 };
 use ports::inbound::OrbitPropagator;
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument};
 
 pub struct LoxOrbitPropagator {}
 
@@ -126,7 +126,7 @@ impl OrbitPropagator for LoxOrbitPropagator {
             };
 
             ephemerides.push(satellite_ephemeris);
-            info!("Finished propagating");
+            debug!("Finished propagating");
         }
 
         Ok(ephemerides)
