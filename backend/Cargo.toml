@@ -14,3 +14,4 @@ sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-native-tls", "t
 thiserror = "2.0.18"
 async-trait = "0.1.89"
 dotenv = "0.15.0"
+lox-space = "0.1.0-alpha.48"

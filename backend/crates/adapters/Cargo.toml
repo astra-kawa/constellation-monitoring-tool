@@ -16,3 +16,4 @@ chrono = { workspace = true }
 reqwest = { workspace = true }
 async-trait = { workspace = true }
 sqlx = { workspace = true }
+lox-space = { workspace = true }

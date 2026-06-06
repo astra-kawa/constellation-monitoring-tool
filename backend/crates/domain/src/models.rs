@@ -68,6 +68,7 @@ pub enum ReferenceFrame {
     J2000,
     Itrf,
     Teme,
+    Icrf,
 }
 
 impl FromStr for ReferenceFrame {
@@ -78,6 +79,7 @@ impl FromStr for ReferenceFrame {
             "J2000" => Ok(ReferenceFrame::J2000),
             "Itrf" => Ok(ReferenceFrame::Itrf),
             "Teme" => Ok(ReferenceFrame::Teme),
+            "Icrf" => Ok(ReferenceFrame::Icrf),
             _ => Err(()),
         }
     }
@@ -89,6 +91,7 @@ impl fmt::Display for ReferenceFrame {
             ReferenceFrame::J2000 => write!(f, "J2000"),
             ReferenceFrame::Itrf => write!(f, "Itrf"),
             ReferenceFrame::Teme => write!(f, "Teme"),
+            ReferenceFrame::Icrf => write!(f, "Icrf"),
         }
     }
 }
