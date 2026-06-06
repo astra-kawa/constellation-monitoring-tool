@@ -52,7 +52,7 @@ impl OrbitPropagator for LoxOrbitPropagator {
             let propagator =
                 J4Propagator::try_new(orbit).map_err(|err| ComputeError::Other(err.to_string()))?;
 
-            let end = epoch + TimeDelta::from_seconds(duration.as_secs() as i64);
+            let end = epoch + TimeDelta::from_seconds_f64(duration.as_secs_f64());
             let trajectory = propagator
                 .propagate(Interval::new(epoch, end))
                 .map_err(|err| ComputeError::Other(err.to_string()))?;
@@ -91,7 +91,7 @@ impl OrbitPropagator for LoxOrbitPropagator {
                         .to_degrees(),
                     arg_periapsis_deg: keplerian.argument_of_periapsis().as_f64().to_degrees(),
                     true_anomaly_deg: keplerian.true_anomaly().as_f64().to_degrees(),
-                    reference_frame: ReferenceFrame::Itrf,
+                    reference_frame: ReferenceFrame::Icrf,
                     source: EphemerisSource::Predicted,
                 };
 
@@ -105,7 +105,7 @@ impl OrbitPropagator for LoxOrbitPropagator {
                     vel_x: cartesian.vx().to_kilometers_per_second(),
                     vel_y: cartesian.vy().to_kilometers_per_second(),
                     vel_z: cartesian.vz().to_kilometers_per_second(),
-                    reference_frame: ReferenceFrame::Itrf,
+                    reference_frame: ReferenceFrame::Icrf,
                     source: EphemerisSource::Predicted,
                 };
 
