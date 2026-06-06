@@ -14,6 +14,7 @@ use lox_space::{
     time::utc::transformations::ToUtc,
 };
 use ports::inbound::OrbitPropagator;
+use tracing::info;
 
 pub struct LoxOrbitPropagator {}
 
@@ -27,13 +28,20 @@ impl OrbitPropagator for LoxOrbitPropagator {
     ) -> Result<Vec<SatelliteEphemeris>, ComputeError> {
         let mut ephemerides: Vec<SatelliteEphemeris> = Vec::new();
 
+        let span = tracing::span!(tracing::Level::INFO, "propagate");
+        let _enter = span.enter();
+        info!("Starting propagation for constellation");
+
         for satellite in constellation.satellites {
-            let formatted_epoch = &satellite
-                .data
-                .initial_state
-                .epoch
-                .format("%Y-%m-%dT%H:%M:%S")
-                .to_string();
+            let satellite_span =
+                tracing::span!(tracing::Level::INFO, "satellite", id = satellite.id);
+            let _satellite_enter = satellite_span.enter();
+
+            let satellite_epoch = satellite.data.initial_state.epoch;
+            let satellite_final_epoch = satellite_epoch + duration;
+            info!("Propagating from {satellite_epoch} to {satellite_final_epoch}");
+
+            let formatted_epoch = &satellite_epoch.format("%Y-%m-%dT%H:%M:%S").to_string();
 
             let epoch = Utc::from_iso(formatted_epoch)
                 .map_err(|err| ComputeError::Other(err.to_string()))?
@@ -119,6 +127,7 @@ impl OrbitPropagator for LoxOrbitPropagator {
             };
 
             ephemerides.push(satellite_ephemeris);
+            info!("Finished propagating");
         }
 
         Ok(ephemerides)

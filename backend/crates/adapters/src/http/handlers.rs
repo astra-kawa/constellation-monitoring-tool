@@ -7,32 +7,48 @@ use axum::{
     extract::{Path, State, rejection::JsonRejection},
     http::StatusCode,
 };
-use chrono::Utc;
 use domain::models::{Constellation, Satellite};
+use tracing::{error, info};
 
 pub async fn health() -> Json<MessageResponse> {
-    println!("{} | GET /health", Utc::now());
+    let span = tracing::span!(tracing::Level::INFO, "get_health_handler");
+    let _enter = span.enter();
+    info!("GET /health");
 
-    Json(MessageResponse {
-        message: "ok".to_owned(),
-    })
+    // todo: eventually implement actual health checks
+    let status = "ok".to_owned();
+    info!("Health status: {status}");
+
+    Json(MessageResponse { message: status })
 }
 
 pub async fn get_constellation(
     State(state): State<AppState>,
 ) -> Result<Json<Constellation>, (StatusCode, Json<ErrorResponse>)> {
+    let span = tracing::span!(tracing::Level::INFO, "get_constellation_handler");
+    let _enter = span.enter();
+    info!("GET /constellation");
+
     let constellation = state
         .constellation_repository
         .get_constellation()
         .await
         .map_err(|error| {
+            let error = format!("Constellation repository error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Constellation repository error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
+
+    let constellation_ids = constellation
+        .satellites
+        .iter()
+        .map(|s| s.id.clone())
+        .collect::<Vec<_>>();
+    info!("Retrieved constellation: {constellation_ids:?}");
 
     Ok(Json(constellation))
 }
@@ -41,13 +57,15 @@ pub async fn set_constellation(
     State(state): State<AppState>,
     payload: Result<Json<Constellation>, JsonRejection>,
 ) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let span = tracing::span!(tracing::Level::INFO, "set_constellation_handler");
+    let _enter = span.enter();
+    info!("POST /set_constellation");
+
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
-        (
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: format!("invalid constellation request: {error}"),
-            }),
-        )
+        let error = format!("Invalid constellation request: {error}");
+        error!(error);
+
+        (StatusCode::BAD_REQUEST, Json(ErrorResponse { error }))
     })?;
 
     state
@@ -55,13 +73,16 @@ pub async fn set_constellation(
         .set_constellation(payload_request)
         .await
         .map_err(|error| {
+            let error = format!("Constellation repository error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Constellation repository error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
+
+    info!("Constellation set successfully");
 
     Ok(Json(MessageResponse {
         message: "Ok".to_string(),
@@ -73,25 +94,25 @@ pub async fn set_satellite(
     Path(satellite_id): Path<String>,
     payload: Result<Json<Satellite>, JsonRejection>,
 ) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let span = tracing::span!(tracing::Level::INFO, "set_satellite_handler");
+    let _enter = span.enter();
+    info!("POST /constellation/{satellite_id}");
+
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
-        (
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: format!("invalid satellite request: {error}"),
-            }),
-        )
+        let error = format!("invalid satellite request: {error}");
+        error!(error);
+
+        (StatusCode::BAD_REQUEST, Json(ErrorResponse { error }))
     })?;
 
     if satellite_id != payload_request.id {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: format!(
-                    "Satellite id path {} does not match payload id {}",
-                    &satellite_id, &payload_request.id
-                ),
-            }),
-        ));
+        let error = format!(
+            "Satellite id path {} does not match payload id {}",
+            &satellite_id, &payload_request.id
+        );
+        error!(error);
+
+        return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse { error })));
     }
 
     state
@@ -99,13 +120,16 @@ pub async fn set_satellite(
         .set_satellite(payload_request)
         .await
         .map_err(|error| {
+            let error = format!("Constellation repository error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Constellation repository error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
+
+    info!("Satellite {} updated successfully", &satellite_id);
 
     Ok(Json(MessageResponse {
         message: "Ok".to_string(),
@@ -116,18 +140,25 @@ pub async fn get_satellite(
     State(state): State<AppState>,
     Path(satellite_id): Path<String>,
 ) -> Result<Json<Satellite>, (StatusCode, Json<ErrorResponse>)> {
+    let span = tracing::span!(tracing::Level::INFO, "get_satellite_handler");
+    let _enter = span.enter();
+    info!("GET /constellation/{satellite_id}");
+
     let satellite = state
         .constellation_repository
         .get_satellite(&satellite_id)
         .await
         .map_err(|error| {
+            let error = format!("Constellation repository error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Constellation repository error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
+
+    info!("Retrieved satellite: {}", &satellite.id);
 
     Ok(Json(satellite))
 }
@@ -136,53 +167,53 @@ pub async fn delete_satellite(
     State(state): State<AppState>,
     Path(satellite_id): Path<String>,
 ) -> Result<Json<MessageResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let span = tracing::span!(tracing::Level::INFO, "delete_satellite_handler");
+    let _enter = span.enter();
+    info!("DELETE /constellation/{satellite_id}");
+
     state
         .constellation_repository
         .delete_satellite(&satellite_id)
         .await
         .map_err(|error| {
+            let error = format!("Constellation repository error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Constellation repository error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
 
-    Ok(Json(MessageResponse {
-        message: format!("Deleted satellite: {}", &satellite_id).to_string(),
-    }))
+    let message = format!("Deleted satellite: {}", &satellite_id);
+    info!(message);
+
+    Ok(Json(MessageResponse { message }))
 }
 
 pub async fn propagate(
     State(state): State<AppState>,
     payload: Result<Json<PropagationRequest>, JsonRejection>,
 ) -> Result<Json<PropagationResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let span = tracing::span!(tracing::Level::INFO, "propagate_handler");
+    let _enter = span.enter();
+    info!("POST /propagate");
+
     let payload_request = payload.map(|Json(inner)| inner).map_err(|error| {
-        (
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: format!("Invalid propagation request: {error}"),
-            }),
-        )
+        let error = format!("Invalid propagation request: {error}");
+        error!(error);
+
+        (StatusCode::BAD_REQUEST, Json(ErrorResponse { error }))
     })?;
 
     if payload_request.duration_seconds <= 0.0 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: "Invalid propagation request: duration_seconds must be > 0.0".to_string(),
-            }),
-        ));
+        let error = "Invalid propagation request: duration_seconds must be > 0.0".to_string();
+        return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse { error })));
     }
 
     if payload_request.step_seconds <= 0.0 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: "Invalid propagation request: step_seconds must be > 0.0".to_string(),
-            }),
-        ));
+        let error = "Invalid propagation request: step_seconds must be > 0.0".to_string();
+        return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse { error })));
     }
 
     let constellation = state
@@ -190,12 +221,12 @@ pub async fn propagate(
         .get_constellation()
         .await
         .map_err(|error| {
-            println!("Constellation repository error: {error}");
+            let error = format!("Constellation repository error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Constellation repository error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
 
@@ -208,12 +239,12 @@ pub async fn propagate(
         )
         .await
         .map_err(|error| {
-            println!("Compute error: {error}");
+            let error = format!("Compute error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Compute error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
 
@@ -222,14 +253,16 @@ pub async fn propagate(
         .set_constellation_ephemerides(&propagate_result)
         .await
         .map_err(|error| {
-            println!("Constellation repository error: {error}");
+            let error = format!("Constellation repository error: {error}");
+            error!(error);
+
             (
                 StatusCode::from_u16(500).unwrap(),
-                Json(ErrorResponse {
-                    error: format!("Constellation repository error: {error}"),
-                }),
+                Json(ErrorResponse { error }),
             )
         })?;
+
+    info!("Generated ephemerides successfully");
 
     Ok(Json(PropagationResponse {
         ephemerides: propagate_result,

@@ -9,6 +9,10 @@ use std::{net::SocketAddr, sync::Arc};
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+    let span = tracing::span!(tracing::Level::INFO, "main");
+    let _enter = span.enter();
+
     dotenv().ok();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
