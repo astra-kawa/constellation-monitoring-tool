@@ -56,22 +56,17 @@ impl OrbitPropagator for JuliaOrbitPropagator {
             .json(&payload_request)
             .send()
             .await
-            .map_err(|err| {
-                println!("OrbitPropagator request error: {}", err);
-                ComputeError::Other
-            })?
+            .map_err(|err| ComputeError::Other(format!("OrbitPropagator request error: {}", err)))?
             .error_for_status()
             .map_err(|err| {
-                println!("OrbitPropagator response error: {}", err);
-                ComputeError::Other
+                ComputeError::Other(format!("OrbitPropagator response error: {}", err))
             })?;
 
         let payload = response
             .json::<JuliaPropagationResponse>()
             .await
             .map_err(|err| {
-                println!("OrbitPropagator response parse error: {}", err);
-                ComputeError::Other
+                ComputeError::Other(format!("OrbitPropagator response parse error: {}", err))
             })?;
 
         Ok(payload.satellites)

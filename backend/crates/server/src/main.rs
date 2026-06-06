@@ -1,5 +1,5 @@
 use adapters::{
-    julia_services::orbit_propagator::JuliaOrbitPropagator,
+    lox_propagator::lox_propagator::LoxOrbitPropagator,
     postgres::postgres_repository::PostgresRepository,
 };
 use application::app::AppState;
@@ -19,7 +19,7 @@ async fn main() {
         .expect("failed to bind backend listener");
 
     let repo = PostgresRepository::new(&env::var("DATABASE_URL").unwrap()).await;
-    let propagator = JuliaOrbitPropagator::new();
+    let propagator = LoxOrbitPropagator {};
 
     let app =
         adapters::http::routes::build_router(AppState::new(Arc::new(repo), Arc::new(propagator)));
